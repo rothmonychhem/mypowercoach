@@ -42,6 +42,8 @@ class AthleteOnboardingService:
         account = self._account_repository.get_by_id(account_id)
         if account is None:
             raise ValueError("The account does not exist.")
+        if training_days_per_week not in (4, 5):
+            raise ValueError("For now, myPowerCoach only supports 4-day or 5-day training splits.")
 
         athlete = AthleteProfile(
             account_id=account_id,
@@ -81,6 +83,4 @@ class AthleteOnboardingService:
 
     @staticmethod
     def program_to_dict(program: ProgramOverview) -> dict:
-        data = asdict(program)
-        data["sessions"] = [asdict(session) for session in program.sessions]
-        return data
+        return asdict(program)

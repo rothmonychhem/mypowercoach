@@ -5,9 +5,12 @@ from app.application.use_cases.athlete_onboarding import AthleteOnboardingServic
 from app.application.use_cases.coaching import CoachingService
 from app.core.config import get_settings
 from app.domain.services.athlete_profiler import AthleteProfiler
+from app.domain.services.bench_video_analyzer import BenchVideoAnalyzer
 from app.domain.services.coach_chat import CoachChatService
+from app.domain.services.deadlift_video_analyzer import DeadliftVideoAnalyzer
 from app.domain.services.feedback_composer import FeedbackComposer
 from app.domain.services.program_generator import ProgramGenerator
+from app.domain.services.squat_video_analyzer import SquatVideoAnalyzer
 from app.infrastructure.db.sqlite import SQLiteDatabase
 from app.infrastructure.repositories.sqlite import SQLiteAccountRepository, SQLiteAthleteRepository
 
@@ -53,4 +56,7 @@ def get_coaching_service() -> CoachingService:
         coach_chat_service=CoachChatService(),
         athlete_profiler=AthleteProfiler(),
         program_generator=ProgramGenerator(),
+        bench_video_analyzer=BenchVideoAnalyzer(),
+        squat_video_analyzer=SquatVideoAnalyzer(),
+        deadlift_video_analyzer=DeadliftVideoAnalyzer(),
     )

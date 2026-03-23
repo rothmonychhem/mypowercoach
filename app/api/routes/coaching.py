@@ -6,6 +6,14 @@ from app.api.schemas.coaching import (
     DailyFeedbackRequest,
     DailyFeedbackResponse,
 )
+from app.api.schemas.video_analysis import (
+    BenchVideoAnalysisRequest,
+    BenchVideoAnalysisResponse,
+    DeadliftVideoAnalysisRequest,
+    DeadliftVideoAnalysisResponse,
+    SquatVideoAnalysisRequest,
+    SquatVideoAnalysisResponse,
+)
 from app.application.use_cases.coaching import CoachingService
 from app.dependencies import get_coaching_service
 
@@ -64,3 +72,51 @@ def coach_chat(
         answer=reply.answer,
         suggested_questions=reply.suggested_questions,
     )
+
+
+@router.post("/bench-video-analysis", response_model=BenchVideoAnalysisResponse)
+def analyze_bench_video(
+    request: BenchVideoAnalysisRequest,
+    service: CoachingService = Depends(get_coaching_service),
+) -> BenchVideoAnalysisResponse:
+    payload = request.model_dump()
+
+    try:
+        analysis = service.analyze_bench_video(**payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+    data = service.bench_video_analysis_to_dict(analysis)
+    return BenchVideoAnalysisResponse(**data)
+
+
+@router.post("/squat-video-analysis", response_model=SquatVideoAnalysisResponse)
+def analyze_squat_video(
+    request: SquatVideoAnalysisRequest,
+    service: CoachingService = Depends(get_coaching_service),
+) -> SquatVideoAnalysisResponse:
+    payload = request.model_dump()
+
+    try:
+        analysis = service.analyze_squat_video(**payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+    data = service.squat_video_analysis_to_dict(analysis)
+    return SquatVideoAnalysisResponse(**data)
+
+
+@router.post("/deadlift-video-analysis", response_model=DeadliftVideoAnalysisResponse)
+def analyze_deadlift_video(
+    request: DeadliftVideoAnalysisRequest,
+    service: CoachingService = Depends(get_coaching_service),
+) -> DeadliftVideoAnalysisResponse:
+    payload = request.model_dump()
+
+    try:
+        analysis = service.analyze_deadlift_video(**payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+
+    data = service.deadlift_video_analysis_to_dict(analysis)
+    return DeadliftVideoAnalysisResponse(**data)

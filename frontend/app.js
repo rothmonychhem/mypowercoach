@@ -17,6 +17,11 @@ const chatForm = document.getElementById("chat-form");
 const chatThread = document.getElementById("chat-thread");
 const chatInput = document.getElementById("chat-input");
 const signOutButton = document.querySelector("[data-signout]");
+const weightUnitToggle = document.getElementById("weight-unit-toggle");
+const weightUnitButtons = document.querySelectorAll("[data-weight-unit]");
+const bodyweightUnitLabel = document.getElementById("bodyweight-unit-label");
+const strengthUnitLabels = document.querySelectorAll(".strength-unit-label");
+const setWeightUnitLabel = document.getElementById("set-weight-unit-label");
 const workoutFeedbackPanel = document.getElementById("lifts-panel");
 const exerciseSelectorList = document.getElementById("exercise-selector-list");
 const selectedExerciseTitle = document.getElementById("selected-exercise-title");
@@ -42,6 +47,7 @@ const createBlockButton = document.getElementById("create-block-button");
 let authMode = "create";
 let selectedExerciseIndex = 0;
 let currentProgramWeek = 2;
+let weightUnit = "kg";
 let athleteProfile = {
     name: "Maya Torres",
     heightCm: "168",
@@ -292,6 +298,40 @@ const blockWeeks = [
         ]
     }
 ];
+const KG_TO_LB = 2.20462;
+
+function convertWeightForDisplay(weightKg) {
+    const numericWeight = Number(weightKg);
+    if (Number.isNaN(numericWeight)) {
+        return 0;
+    }
+    return weightUnit === "kg" ? numericWeight : numericWeight * KG_TO_LB;
+}
+
+function convertWeightFromDisplay(weightValue) {
+    const numericWeight = Number(weightValue);
+    if (Number.isNaN(numericWeight)) {
+        return 0;
+    }
+    return weightUnit === "kg" ? numericWeight : numericWeight / KG_TO_LB;
+}
+
+function formatWeight(weightKg) {
+    const convertedWeight = convertWeightForDisplay(weightKg);
+    const rounded = convertedWeight >= 100 ? convertedWeight.toFixed(0) : convertedWeight.toFixed(1);
+    return `${rounded} ${weightUnit}`;
+}
+
+function renderWeightUnit() {
+    weightUnitButtons.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.weightUnit === weightUnit);
+    });
+    bodyweightUnitLabel.textContent = weightUnit;
+    strengthUnitLabels.forEach((label) => {
+        label.textContent = weightUnit;
+    });
+    setWeightUnitLabel.textContent = weightUnit;
+}
 
 function showView(viewId) {
     views.forEach((view) => {
@@ -563,9 +603,9 @@ function renderSelectedExercise() {
                         <input type="checkbox" data-field="done" ${set.done ? "checked" : ""} aria-label="${exercise.name} set ${index + 1} done">
                     </label>
                     <span class="set-label">Set ${index + 1}</span>
-                    <span class="planned-chip">Planned ${set.plannedReps} @ ${set.plannedWeight} kg, RPE ${set.plannedRpe}</span>
+                    <span class="planned-chip">Planned ${set.plannedReps} @ ${formatWeight(set.plannedWeight)}, RPE ${set.plannedRpe}</span>
                     <input type="number" min="0" max="30" value="${set.completedReps}" data-field="reps" aria-label="${exercise.name} set ${index + 1} reps">
-                    <input type="number" min="0" max="400" step="0.5" value="${set.completedWeight}" data-field="weight" aria-label="${exercise.name} set ${index + 1} weight">
+                    <input type="number" min="0" max="1000" step="0.5" value="${convertWeightForDisplay(set.completedWeight).toFixed(1)}" data-field="weight" aria-label="${exercise.name} set ${index + 1} weight">
                     <input type="number" min="5" max="10" step="0.5" value="${set.completedRpe}" data-field="rpe" aria-label="${exercise.name} set ${index + 1} rpe">
                     <div>
                         <input class="set-video-input" type="file" accept="video/*" data-field="video" aria-label="${exercise.name} set ${index + 1} video">
@@ -579,22 +619,23 @@ function renderSelectedExercise() {
 
 function renderProfile() {
     workspaceAthleteName.textContent = athleteProfile.name;
-    workspaceAthleteCopy.textContent = `${athleteProfile.bodyweightKg} kg, ${athleteProfile.sex.toLowerCase()}, ${athleteProfile.trainingDaysPerWeek} training days, PRs ${athleteProfile.squatKg}/${athleteProfile.benchKg}/${athleteProfile.deadliftKg} kg.`;
+    workspaceAthleteCopy.textContent = `${formatWeight(athleteProfile.bodyweightKg)}, ${athleteProfile.sex.toLowerCase()}, ${athleteProfile.trainingDaysPerWeek} training days, PRs ${formatWeight(athleteProfile.squatKg)} / ${formatWeight(athleteProfile.benchKg)} / ${formatWeight(athleteProfile.deadliftKg)}.`;
 
     document.getElementById("profile-name").value = athleteProfile.name;
     document.getElementById("profile-height").value = athleteProfile.heightCm;
     document.getElementById("profile-age").value = athleteProfile.age;
     document.getElementById("profile-sex").value = athleteProfile.sex;
-    document.getElementById("profile-bodyweight").value = athleteProfile.bodyweightKg;
+    document.getElementById("profile-bodyweight").value = convertWeightForDisplay(athleteProfile.bodyweightKg).toFixed(1);
     document.getElementById("profile-training-age").value = athleteProfile.trainingAgeYears;
     document.getElementById("profile-training-days").value = athleteProfile.trainingDaysPerWeek;
     document.getElementById("profile-equipment").value = athleteProfile.equipment;
     document.getElementById("profile-goal").value = athleteProfile.primaryGoal;
-    document.getElementById("profile-squat").value = athleteProfile.squatKg;
-    document.getElementById("profile-bench").value = athleteProfile.benchKg;
-    document.getElementById("profile-deadlift").value = athleteProfile.deadliftKg;
+    document.getElementById("profile-squat").value = convertWeightForDisplay(athleteProfile.squatKg).toFixed(1);
+    document.getElementById("profile-bench").value = convertWeightForDisplay(athleteProfile.benchKg).toFixed(1);
+    document.getElementById("profile-deadlift").value = convertWeightForDisplay(athleteProfile.deadliftKg).toFixed(1);
     document.getElementById("profile-constraints").value = athleteProfile.constraints;
     document.getElementById("profile-notes").value = athleteProfile.notes;
+    renderWeightUnit();
 }
 
 viewButtons.forEach((button) => {
@@ -671,6 +712,17 @@ createBlockButton.addEventListener("click", () => {
     newBlockGate.textContent = "The next block would now use the previous block data plus your recovery and priority answers to build a new cycle.";
 });
 
+weightUnitToggle.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-weight-unit]");
+    if (!button) {
+        return;
+    }
+
+    weightUnit = button.dataset.weightUnit;
+    renderProfile();
+    renderWorkoutPlanner();
+});
+
 exerciseSliderPrev.addEventListener("click", () => {
     if (selectedExerciseIndex > 0) {
         selectedExerciseIndex -= 1;
@@ -704,7 +756,7 @@ selectedSetList.addEventListener("change", (event) => {
     }
 
     if (target.dataset.field === "weight") {
-        exercise.sets[setIndex].completedWeight = Number(target.value);
+        exercise.sets[setIndex].completedWeight = convertWeightFromDisplay(target.value);
     }
 
     if (target.dataset.field === "rpe") {
@@ -726,14 +778,14 @@ profileForm.addEventListener("submit", (event) => {
         heightCm: document.getElementById("profile-height").value.trim(),
         age: document.getElementById("profile-age").value.trim(),
         sex: document.getElementById("profile-sex").value,
-        bodyweightKg: document.getElementById("profile-bodyweight").value.trim(),
+        bodyweightKg: convertWeightFromDisplay(document.getElementById("profile-bodyweight").value.trim()).toFixed(1),
         trainingAgeYears: document.getElementById("profile-training-age").value.trim(),
         trainingDaysPerWeek: document.getElementById("profile-training-days").value.trim(),
         equipment: document.getElementById("profile-equipment").value,
         primaryGoal: document.getElementById("profile-goal").value.trim(),
-        squatKg: document.getElementById("profile-squat").value.trim(),
-        benchKg: document.getElementById("profile-bench").value.trim(),
-        deadliftKg: document.getElementById("profile-deadlift").value.trim(),
+        squatKg: convertWeightFromDisplay(document.getElementById("profile-squat").value.trim()).toFixed(1),
+        benchKg: convertWeightFromDisplay(document.getElementById("profile-bench").value.trim()).toFixed(1),
+        deadliftKg: convertWeightFromDisplay(document.getElementById("profile-deadlift").value.trim()).toFixed(1),
         constraints: document.getElementById("profile-constraints").value.trim(),
         notes: document.getElementById("profile-notes").value.trim()
     };

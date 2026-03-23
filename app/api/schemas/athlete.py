@@ -8,7 +8,7 @@ class AthleteProfilePayload(BaseModel):
     sex: str = Field(min_length=1, max_length=24)
     bodyweight_kg: float = Field(gt=20, lt=400)
     training_age_years: float = Field(ge=0, le=40)
-    training_days_per_week: int = Field(ge=2, le=7)
+    training_days_per_week: int = Field(ge=4, le=5)
     primary_goal: str = Field(min_length=4, max_length=140)
     equipment: str = Field(min_length=2, max_length=40)
     squat_kg: float = Field(gt=20, lt=600)

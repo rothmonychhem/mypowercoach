@@ -181,6 +181,10 @@
                         </div>
 
                         <div class="topbar-actions">
+                            <div class="unit-toggle" id="weight-unit-toggle" aria-label="Weight unit toggle">
+                                <button class="unit-toggle-button is-active" type="button" data-weight-unit="kg">KG</button>
+                                <button class="unit-toggle-button" type="button" data-weight-unit="lb">LB</button>
+                            </div>
                             <button class="ghost-button" data-view-target="landing-view">View product</button>
                             <button class="primary-button" data-signout>Sign out</button>
                         </div>
@@ -226,7 +230,7 @@
                                     </select>
                                 </label>
                                 <label>
-                                    Bodyweight (kg)
+                                    Bodyweight (<span id="bodyweight-unit-label">kg</span>)
                                     <input type="number" id="profile-bodyweight" min="20" max="400" step="0.1" placeholder="84" required>
                                 </label>
                                 <label>
@@ -250,15 +254,15 @@
                                     <input type="text" id="profile-goal" placeholder="Build a stronger meet-prep block" required>
                                 </label>
                                 <label>
-                                    Squat PR (kg)
+                                    Squat PR (<span class="strength-unit-label">kg</span>)
                                     <input type="number" id="profile-squat" min="20" max="600" step="0.5" placeholder="180" required>
                                 </label>
                                 <label>
-                                    Bench PR (kg)
+                                    Bench PR (<span class="strength-unit-label">kg</span>)
                                     <input type="number" id="profile-bench" min="20" max="400" step="0.5" placeholder="110" required>
                                 </label>
                                 <label>
-                                    Deadlift PR (kg)
+                                    Deadlift PR (<span class="strength-unit-label">kg</span>)
                                     <input type="number" id="profile-deadlift" min="20" max="600" step="0.5" placeholder="220" required>
                                 </label>
                                 <label class="profile-span-2">
@@ -304,7 +308,7 @@
                                         <span>Set</span>
                                         <span>Plan</span>
                                         <span>Reps</span>
-                                        <span>Weight</span>
+                                        <span>Weight (<span id="set-weight-unit-label">kg</span>)</span>
                                         <span>RPE</span>
                                         <span>Video</span>
                                     </div>
