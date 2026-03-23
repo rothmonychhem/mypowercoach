@@ -13,7 +13,6 @@ const workspacePanels = document.querySelectorAll(".workspace-panel");
 const profileForm = document.getElementById("profile-form");
 const dailyCheckinForm = document.getElementById("daily-checkin-form");
 const dailyStatus = document.getElementById("daily-status");
-const dailyResponse = document.getElementById("daily-response");
 const chatForm = document.getElementById("chat-form");
 const chatThread = document.getElementById("chat-thread");
 const chatInput = document.getElementById("chat-input");
@@ -24,10 +23,8 @@ const selectedExerciseTitle = document.getElementById("selected-exercise-title")
 const selectedExercisePlan = document.getElementById("selected-exercise-plan");
 const selectedExerciseProgress = document.getElementById("selected-exercise-progress");
 const selectedSetList = document.getElementById("selected-set-list");
-const exerciseSliderShell = document.getElementById("exercise-slider-shell");
 const exerciseSliderPrev = document.getElementById("exercise-slider-prev");
 const exerciseSliderNext = document.getElementById("exercise-slider-next");
-const toggleExerciseRailButton = document.getElementById("toggle-exercise-rail");
 const blockWeekGrid = document.getElementById("block-week-grid");
 const prevWeekButton = document.getElementById("prev-week-button");
 const nextWeekButton = document.getElementById("next-week-button");
@@ -45,7 +42,6 @@ const createBlockButton = document.getElementById("create-block-button");
 let authMode = "create";
 let selectedExerciseIndex = 0;
 let currentProgramWeek = 2;
-let exerciseRailCollapsed = false;
 let athleteProfile = {
     name: "Maya Torres",
     heightCm: "168",
@@ -529,20 +525,21 @@ function renderProgramWeek() {
 }
 
 function renderWorkoutPlanner() {
-    exerciseSelectorList.innerHTML = workoutPlan
-        .map((exercise, index) => {
-            const doneCount = exercise.sets.filter((set) => set.done).length;
-            return `
-                <button class="exercise-selector-button ${index === selectedExerciseIndex ? "is-selected" : ""}" type="button" data-exercise-index="${index}">
-                    <strong>${exercise.name}</strong>
-                    <div class="exercise-meta">
-                        <span>${exercise.sets.length} sets planned</span>
-                        <span>${doneCount}/${exercise.sets.length} done</span>
-                    </div>
-                </button>
-            `;
-        })
-        .join("");
+    const exercise = workoutPlan[selectedExerciseIndex];
+    const doneCount = exercise.sets.filter((set) => set.done).length;
+
+    exerciseSelectorList.innerHTML = `
+        <button class="exercise-selector-button is-selected" type="button">
+            <strong>${exercise.name}</strong>
+            <div class="exercise-meta">
+                <span>${exercise.sets.length} sets planned</span>
+                <span>${doneCount}/${exercise.sets.length} done</span>
+            </div>
+        </button>
+    `;
+
+    exerciseSliderPrev.disabled = selectedExerciseIndex === 0;
+    exerciseSliderNext.disabled = selectedExerciseIndex === workoutPlan.length - 1;
 
     renderSelectedExercise();
 }
@@ -578,11 +575,6 @@ function renderSelectedExercise() {
             `
         )
         .join("");
-}
-
-function renderExerciseRailState() {
-    exerciseSliderShell.classList.toggle("is-collapsed", exerciseRailCollapsed);
-    toggleExerciseRailButton.textContent = exerciseRailCollapsed ? "Show exercises" : "Hide exercises";
 }
 
 function renderProfile() {
@@ -679,29 +671,18 @@ createBlockButton.addEventListener("click", () => {
     newBlockGate.textContent = "The next block would now use the previous block data plus your recovery and priority answers to build a new cycle.";
 });
 
-exerciseSelectorList.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-exercise-index]");
-    if (!button) {
-        return;
-    }
-
-    selectedExerciseIndex = Number(button.dataset.exerciseIndex);
-    renderWorkoutPlanner();
-    exerciseRailCollapsed = true;
-    renderExerciseRailState();
-});
-
 exerciseSliderPrev.addEventListener("click", () => {
-    exerciseSelectorList.scrollBy({ left: -240, behavior: "smooth" });
+    if (selectedExerciseIndex > 0) {
+        selectedExerciseIndex -= 1;
+        renderWorkoutPlanner();
+    }
 });
 
 exerciseSliderNext.addEventListener("click", () => {
-    exerciseSelectorList.scrollBy({ left: 240, behavior: "smooth" });
-});
-
-toggleExerciseRailButton.addEventListener("click", () => {
-    exerciseRailCollapsed = !exerciseRailCollapsed;
-    renderExerciseRailState();
+    if (selectedExerciseIndex < workoutPlan.length - 1) {
+        selectedExerciseIndex += 1;
+        renderWorkoutPlanner();
+    }
 });
 
 selectedSetList.addEventListener("change", (event) => {
@@ -759,10 +740,6 @@ profileForm.addEventListener("submit", (event) => {
 
     renderProfile();
     profileStatus.textContent = "Profile saved locally";
-    dailyResponse.innerHTML = `
-        <p class="card-label">Coach response</p>
-        <p>Your athlete profile is updated. Programming can now use your current body metrics, training setup, and squat/bench/deadlift PRs instead of generic defaults.</p>
-    `;
 });
 
 dailyCheckinForm.addEventListener("submit", (event) => {
@@ -825,12 +802,6 @@ dailyCheckinForm.addEventListener("submit", (event) => {
         : "No set videos attached today. Add one on any set when you want feedback on the exact rep quality or load change.";
 
     dailyStatus.textContent = status;
-    dailyResponse.innerHTML = `
-        <p class="card-label">Coach response</p>
-        <p>${summary}</p>
-        <ul class="clean-list">${buildExerciseSummary(exercises)}</ul>
-        <p>${videoText}</p>
-    `;
     updateWorkoutFeedbackPanel(summary, cues, improvements, videoText);
 });
 
@@ -855,5 +826,4 @@ setAuthMode("create");
 renderProfile();
 renderWorkoutPlanner();
 renderProgramWeek();
-renderExerciseRailState();
 setActivePanel("profile-panel");

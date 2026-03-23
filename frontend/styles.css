@@ -483,12 +483,6 @@ button {
     gap: 10px;
 }
 
-.daily-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
 .week-arrow:disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -530,11 +524,6 @@ button {
     gap: 12px;
     align-items: center;
     margin-bottom: 18px;
-    transition: margin var(--transition), opacity var(--transition);
-}
-
-.exercise-slider-shell.is-collapsed {
-    display: none;
 }
 
 .slider-arrow {
@@ -544,7 +533,7 @@ button {
 .exercise-selector-button {
     display: grid;
     gap: 6px;
-    min-width: 220px;
+    width: 100%;
     padding: 12px 14px;
     color: var(--ink);
     text-align: left;
@@ -552,11 +541,7 @@ button {
 }
 
 .exercise-selector-list {
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(220px, 1fr);
-    overflow-x: auto;
-    padding-bottom: 6px;
-    scrollbar-width: thin;
+    display: grid;
 }
 
 .exercise-selector-button.is-selected {
@@ -598,7 +583,7 @@ button {
 
 .today-detail-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    grid-template-columns: 1fr;
     gap: 16px;
     align-items: start;
 }
@@ -704,11 +689,6 @@ button {
     display: grid;
     gap: 14px;
     padding: 20px;
-}
-
-.response-card {
-    margin-top: 0;
-    min-height: 100%;
 }
 
 .selected-week-panel,
@@ -942,8 +922,7 @@ button {
     }
 
     .selected-exercise-topline,
-    .panel-header,
-    .daily-header-actions {
+    .panel-header {
         flex-direction: column;
         align-items: start;
     }
