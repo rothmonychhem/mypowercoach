@@ -8,20 +8,23 @@ from app.domain.services.athlete_profiler import AthleteProfiler
 from app.domain.services.coach_chat import CoachChatService
 from app.domain.services.feedback_composer import FeedbackComposer
 from app.domain.services.program_generator import ProgramGenerator
-from app.infrastructure.repositories.in_memory import (
-    InMemoryAccountRepository,
-    InMemoryAthleteRepository,
-)
+from app.infrastructure.db.sqlite import SQLiteDatabase
+from app.infrastructure.repositories.sqlite import SQLiteAccountRepository, SQLiteAthleteRepository
 
 
 @lru_cache
-def get_account_repository() -> InMemoryAccountRepository:
-    return InMemoryAccountRepository()
+def get_database() -> SQLiteDatabase:
+    return SQLiteDatabase(database_path=get_settings().database_path)
 
 
 @lru_cache
-def get_athlete_repository() -> InMemoryAthleteRepository:
-    return InMemoryAthleteRepository()
+def get_account_repository() -> SQLiteAccountRepository:
+    return SQLiteAccountRepository(database=get_database())
+
+
+@lru_cache
+def get_athlete_repository() -> SQLiteAthleteRepository:
+    return SQLiteAthleteRepository(database=get_database())
 
 
 @lru_cache

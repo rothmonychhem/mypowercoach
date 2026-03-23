@@ -17,8 +17,13 @@ def create_daily_feedback(
     request: DailyFeedbackRequest,
     service: CoachingService = Depends(get_coaching_service),
 ) -> DailyFeedbackResponse:
+    payload = request.model_dump()
+    if payload.get("workout_exercises"):
+        payload["exercises"] = payload["workout_exercises"]
+    payload.pop("workout_exercises", None)
+
     try:
-        feedback = service.generate_daily_feedback(**request.model_dump())
+        feedback = service.generate_daily_feedback(**payload)
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
 
@@ -26,6 +31,22 @@ def create_daily_feedback(
         status=feedback.status,
         summary=feedback.summary,
         next_adjustment=feedback.next_adjustment,
+        cues=feedback.cues,
+        improvements=feedback.improvements,
+        exercise_feedback=[
+            {
+                "exercise_name": item.exercise_name,
+                "planned_sets": item.planned_sets,
+                "planned_reps": item.planned_reps,
+                "planned_weight_kg": item.planned_weight_kg,
+                "completed_sets": item.completed_sets,
+                "completed_reps": item.completed_reps,
+                "completed_weight_kg": item.completed_weight_kg,
+                "note": item.note,
+            }
+            for item in feedback.exercise_feedback
+        ],
+        video_feedback=feedback.video_feedback,
     )
 
 

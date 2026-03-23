@@ -245,9 +245,9 @@ button {
 .preview-grid,
 .feature-grid,
 .auth-benefits,
-.today-grid,
 .program-grid,
-.lifts-grid {
+.lifts-grid,
+.profile-grid {
     display: grid;
     gap: 16px;
 }
@@ -337,7 +337,8 @@ button {
 }
 
 .auth-form label,
-.checkin-card label {
+.checkin-card label,
+.profile-form label {
     display: grid;
     gap: 8px;
     font-weight: 700;
@@ -347,7 +348,11 @@ button {
 .auth-form select,
 .checkin-card select,
 .checkin-card textarea,
-.chat-form input {
+.checkin-card input,
+.chat-form input,
+.profile-form input,
+.profile-form select,
+.profile-form textarea {
     width: 100%;
     padding: 13px 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -472,8 +477,216 @@ button {
     color: var(--ink);
 }
 
-.today-grid {
-    grid-template-columns: minmax(0, 0.95fr) minmax(300px, 0.85fr);
+.week-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.week-arrow:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.planned-workout-list,
+.exercise-log-list,
+.block-overview,
+.block-week-grid,
+.exercise-selector-list {
+    display: grid;
+    gap: 12px;
+}
+
+.planned-row,
+.exercise-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.planned-row {
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.exercise-selector-button,
+.set-log-row {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.exercise-slider-shell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.slider-arrow {
+    padding-inline: 14px;
+}
+
+.exercise-selector-button {
+    display: grid;
+    gap: 6px;
+    min-width: 220px;
+    padding: 12px 14px;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+}
+
+.exercise-selector-list {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(220px, 1fr);
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+}
+
+.exercise-selector-button.is-selected {
+    background: linear-gradient(135deg, rgba(99, 210, 154, 0.16), rgba(255, 255, 255, 0.06));
+    box-shadow: inset 0 0 0 1px rgba(99, 210, 154, 0.2);
+}
+
+.exercise-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.selected-exercise-shell {
+    display: grid;
+    gap: 12px;
+    padding: 18px 18px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.selected-exercise-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.selected-exercise-topline p,
+.exercise-log-header span {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin: 4px 0 0;
+}
+
+.today-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.set-sheet-header {
+    display: grid;
+    grid-template-columns: 52px 68px minmax(130px, 1fr) 92px 110px minmax(170px, 1fr);
+    gap: 10px;
+    padding: 0 12px;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.set-log-list {
+    display: grid;
+    gap: 8px;
+}
+
+.set-log-row {
+    display: grid;
+    grid-template-columns: 52px 68px minmax(130px, 1fr) 92px 110px minmax(170px, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 16px;
+}
+
+.set-log-row.is-done {
+    background: rgba(99, 210, 154, 0.14);
+    border-color: rgba(99, 210, 154, 0.3);
+}
+
+.set-check {
+    display: grid;
+    place-items: center;
+}
+
+.set-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: #63d29a;
+}
+
+.set-label {
+    font-weight: 700;
+}
+
+.planned-chip {
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.set-log-row input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    background: rgba(9, 12, 17, 0.72);
+    color: var(--ink);
+}
+
+.set-video-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
+    background: rgba(9, 12, 17, 0.52);
+    color: var(--muted);
+}
+
+.exercise-log-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.profile-grid {
+    grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr);
+}
+
+.profile-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+}
+
+.profile-span-2 {
+    grid-column: span 2;
+}
+
+.profile-save {
+    width: fit-content;
 }
 
 .checkin-card {
@@ -483,15 +696,127 @@ button {
 }
 
 .response-card {
-    margin-top: 18px;
+    margin-top: 0;
+    min-height: 100%;
+}
+
+.selected-week-panel,
+.new-block-panel {
+    display: grid;
+    gap: 16px;
 }
 
 .program-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.block-week-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .day-card {
     background: var(--surface-strong);
+}
+
+.program-sheet-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(8, 12, 17, 0.78);
+}
+
+.program-sheet {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.program-sheet th,
+.program-sheet td {
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 14px 12px;
+    vertical-align: top;
+}
+
+.program-sheet th:last-child,
+.program-sheet td:last-child {
+    border-right: 0;
+}
+
+.program-sheet thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: rgba(21, 26, 34, 0.98);
+    text-align: left;
+}
+
+.program-sheet-slot {
+    width: 110px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.program-sheet-day {
+    display: grid;
+    gap: 4px;
+}
+
+.program-sheet-day strong {
+    font-size: 0.96rem;
+}
+
+.program-sheet-day span {
+    color: var(--muted);
+    font-size: 0.88rem;
+}
+
+.program-sheet-cell {
+    display: grid;
+    gap: 8px;
+    min-height: 74px;
+}
+
+.program-sheet-exercise {
+    display: grid;
+    gap: 4px;
+}
+
+.program-sheet-exercise strong {
+    font-size: 0.95rem;
+}
+
+.program-sheet-exercise span {
+    color: var(--muted);
+    font-size: 0.86rem;
+    line-height: 1.5;
+}
+
+.program-sheet-empty {
+    color: rgba(155, 166, 178, 0.72);
+}
+
+.program-sheet-note {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.new-block-gate {
+    padding: 16px 18px;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.02);
+    line-height: 1.6;
+}
+
+.is-disabled {
+    opacity: 0.6;
 }
 
 .emphasis-card,
@@ -548,7 +873,13 @@ button {
     .hero-card,
     .auth-shell,
     .app-shell,
-    .today-grid {
+    .today-detail-grid,
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .exercise-log-grid,
+    .block-week-grid {
         grid-template-columns: 1fr;
     }
 
@@ -558,6 +889,11 @@ button {
 
     .lifts-grid {
         grid-template-columns: 1fr;
+    }
+
+    .set-sheet-header,
+    .set-log-row {
+        grid-template-columns: 44px 64px minmax(110px, 1fr) repeat(3, minmax(0, 1fr));
     }
 }
 
@@ -576,8 +912,14 @@ button {
     .feature-grid,
     .preview-grid,
     .program-grid,
-    .chat-form {
+    .chat-form,
+    .profile-form,
+    .exercise-slider-shell {
         grid-template-columns: 1fr;
+    }
+
+    .profile-span-2 {
+        grid-column: span 1;
     }
 
     .hero-card,
@@ -586,5 +928,19 @@ button {
     .workspace-panel,
     .sidebar {
         border-radius: 24px;
+    }
+
+    .selected-exercise-topline,
+    .panel-header {
+        flex-direction: column;
+        align-items: start;
+    }
+
+    .set-sheet-header {
+        display: none;
+    }
+
+    .set-log-row {
+        grid-template-columns: 44px 1fr;
     }
 }

@@ -58,7 +58,7 @@
                             </article>
                             <article class="preview-panel">
                                 <p class="card-label">Daily feedback</p>
-                                <strong>Readiness, fatigue, and session guidance</strong>
+                                <strong>Planned workout review, video upload, and session guidance</strong>
                             </article>
                             <article class="preview-panel">
                                 <p class="card-label">Coach chat</p>
@@ -85,13 +85,13 @@
                     </article>
                     <article class="feature-card">
                         <p class="eyebrow">3. Daily Guidance</p>
-                        <h3>Check in after training</h3>
-                        <p>Log how the day felt, get feedback on fatigue and execution, and see how the next week is adapting around your performance.</p>
+                        <h3>Review the workout you actually did</h3>
+                        <p>See the planned session, edit the reps, sets, and load you completed, attach a video, and get feedback on execution and next steps.</p>
                     </article>
                     <article class="feature-card">
-                        <p class="eyebrow">4. Lift Feedback</p>
+                        <p class="eyebrow">4. Workout Feedback</p>
                         <h3>See how your training is going</h3>
-                        <p>Review program trends, ask the coach chatbot questions, and get lift-specific feedback for your daily training.</p>
+                        <p>Review block-level programming, ask the coach chatbot questions, and get workout-level feedback, cues, and what to improve next.</p>
                     </article>
                 </section>
             </main>
@@ -135,7 +135,6 @@
                             <input type="password" id="password" placeholder="Enter password" required>
                         </label>
                         <button class="primary-button auth-submit" type="submit" id="auth-submit">Create account</button>
-                        <button class="ghost-button" type="button" id="demo-entry">Enter demo workspace</button>
                     </form>
                 </section>
             </div>
@@ -159,10 +158,11 @@
                     </section>
 
                     <nav class="nav">
-                        <button class="nav-link is-active" data-panel="today-panel">Daily feedback</button>
+                        <button class="nav-link is-active" data-panel="profile-panel">My profile</button>
+                        <button class="nav-link" data-panel="today-panel">Daily feedback</button>
                         <button class="nav-link" data-panel="program-panel">My program</button>
                         <button class="nav-link" data-panel="chat-panel">Coach chatbot</button>
-                        <button class="nav-link" data-panel="lifts-panel">Lift feedback</button>
+                        <button class="nav-link" data-panel="lifts-panel">Workout feedback</button>
                     </nav>
 
                     <section class="sidebar-card">
@@ -186,96 +186,226 @@
                         </div>
                     </header>
 
-                    <section class="workspace-panel is-active" id="today-panel">
+                    <section class="workspace-panel is-active" id="profile-panel">
                         <div class="panel-header">
                             <div>
-                                <p class="eyebrow">Daily Feedback</p>
-                                <h3>How did training go today?</h3>
+                                <p class="eyebrow">Athlete Profile</p>
+                                <h3>Fill in and update your athlete information</h3>
                             </div>
-                            <span class="status-tag" id="daily-status">Readiness stable</span>
+                            <span class="panel-badge" id="profile-status">Profile not saved yet</span>
                         </div>
 
-                        <div class="today-grid">
+                        <div class="profile-grid">
                             <article class="panel-card">
-                                <p class="card-label">Today's coaching note</p>
-                                <h4>Bench can push, deadlift should stay contained.</h4>
+                                <p class="card-label">Why this matters</p>
+                                <h4>Your program should be built around the actual athlete.</h4>
                                 <p>
-                                    Your current signals say you can keep progressing bench volume, but heavy pull fatigue should not spill into the rest of the week.
+                                    Height, bodyweight, training age, schedule, equipment, and current PRs all help shape the plan. This information should stay editable so the coaching adapts as you change.
                                 </p>
                             </article>
 
+                            <form class="profile-form" id="profile-form">
+                                <label>
+                                    Name
+                                    <input type="text" id="profile-name" placeholder="Maya Torres" required>
+                                </label>
+                                <label>
+                                    Height (cm)
+                                    <input type="number" id="profile-height" min="100" max="260" step="0.1" placeholder="170" required>
+                                </label>
+                                <label>
+                                    Age
+                                    <input type="number" id="profile-age" min="13" max="100" placeholder="28" required>
+                                </label>
+                                <label>
+                                    Sex
+                                    <select id="profile-sex">
+                                        <option value="Female">Female</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Bodyweight (kg)
+                                    <input type="number" id="profile-bodyweight" min="20" max="400" step="0.1" placeholder="84" required>
+                                </label>
+                                <label>
+                                    Training age (years)
+                                    <input type="number" id="profile-training-age" min="0" max="40" step="0.5" placeholder="3" required>
+                                </label>
+                                <label>
+                                    Training days per week
+                                    <input type="number" id="profile-training-days" min="2" max="7" placeholder="4" required>
+                                </label>
+                                <label>
+                                    Equipment
+                                    <select id="profile-equipment">
+                                        <option value="Raw">Raw</option>
+                                        <option value="Raw with wraps">Raw with wraps</option>
+                                        <option value="Single-ply">Single-ply</option>
+                                    </select>
+                                </label>
+                                <label class="profile-span-2">
+                                    Primary goal
+                                    <input type="text" id="profile-goal" placeholder="Build a stronger meet-prep block" required>
+                                </label>
+                                <label>
+                                    Squat PR (kg)
+                                    <input type="number" id="profile-squat" min="20" max="600" step="0.5" placeholder="180" required>
+                                </label>
+                                <label>
+                                    Bench PR (kg)
+                                    <input type="number" id="profile-bench" min="20" max="400" step="0.5" placeholder="110" required>
+                                </label>
+                                <label>
+                                    Deadlift PR (kg)
+                                    <input type="number" id="profile-deadlift" min="20" max="600" step="0.5" placeholder="220" required>
+                                </label>
+                                <label class="profile-span-2">
+                                    Constraints
+                                    <input type="text" id="profile-constraints" placeholder="Hip shift, low-back fatigue, limited weekday time">
+                                </label>
+                                <label class="profile-span-2">
+                                    Notes
+                                    <textarea id="profile-notes" rows="4" placeholder="Best bench responds to higher frequency. Deadlift fatigue can stack fast."></textarea>
+                                </label>
+                                <button class="primary-button profile-save" type="submit">Save athlete profile</button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <section class="workspace-panel is-hidden" id="today-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">Daily Feedback</p>
+                                <h3>Today's workout</h3>
+                            </div>
+                            <span class="status-tag" id="daily-status">Ready to log</span>
+                        </div>
+
+                        <div class="exercise-slider-shell">
+                            <button class="ghost-button slider-arrow" type="button" id="exercise-slider-prev" aria-label="Show previous exercises">Previous</button>
+                            <div class="exercise-selector-list" id="exercise-selector-list"></div>
+                            <button class="ghost-button slider-arrow" type="button" id="exercise-slider-next" aria-label="Show next exercises">Next</button>
+                        </div>
+
+                        <div class="today-detail-grid">
                             <form class="checkin-card" id="daily-checkin-form">
-                                <p class="card-label">Daily check-in</p>
-                                <label>
-                                    Session quality
-                                    <select id="session-quality">
-                                        <option value="great">Great</option>
-                                        <option value="solid" selected>Solid</option>
-                                        <option value="rough">Rough</option>
-                                    </select>
-                                </label>
-                                <label>
-                                    Fatigue
-                                    <select id="fatigue-level">
-                                        <option value="low">Low</option>
-                                        <option value="moderate" selected>Moderate</option>
-                                        <option value="high">High</option>
-                                    </select>
-                                </label>
+                                <div class="selected-exercise-shell">
+                                    <div class="selected-exercise-topline">
+                                        <div>
+                                            <h4 id="selected-exercise-title">Competition bench</h4>
+                                            <p id="selected-exercise-plan">Primary bench work.</p>
+                                        </div>
+                                        <span class="panel-badge" id="selected-exercise-progress">0 of 5 sets done</span>
+                                    </div>
+                                    <div class="set-sheet-header">
+                                        <span>Done</span>
+                                        <span>Set</span>
+                                        <span>Plan</span>
+                                        <span>Reps</span>
+                                        <span>Weight</span>
+                                        <span>Video</span>
+                                    </div>
+                                    <div class="set-log-list" id="selected-set-list"></div>
+                                </div>
+                                <div class="daily-meta-grid">
+                                    <label>
+                                        Session quality
+                                        <select id="session-quality">
+                                            <option value="great">Great</option>
+                                            <option value="solid" selected>Solid</option>
+                                            <option value="rough">Rough</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        Fatigue
+                                        <select id="fatigue-level">
+                                            <option value="low">Low</option>
+                                            <option value="moderate" selected>Moderate</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </label>
+                                </div>
                                 <label>
                                     Notes
-                                    <textarea id="daily-notes" rows="4" placeholder="Squat felt strong, deadlift felt heavy from the floor..."></textarea>
+                                    <textarea id="daily-notes" rows="3" placeholder="Short session note"></textarea>
                                 </label>
                                 <button class="primary-button" type="submit">Save today's feedback</button>
                             </form>
-                        </div>
 
-                        <article class="response-card" id="daily-response">
-                            <p class="card-label">Coach response</p>
-                            <p>
-                                Log your day and the coach will summarize what happened, what it means, and whether anything in your program should change.
-                            </p>
-                        </article>
+                            <article class="response-card" id="daily-response">
+                                <p class="card-label">Coach response</p>
+                                <p>Log the workout and the coach will compare it to plan.</p>
+                            </article>
+                        </div>
                     </section>
 
                     <section class="workspace-panel is-hidden" id="program-panel">
                         <div class="panel-header">
                             <div>
                                 <p class="eyebrow">My Program</p>
-                                <h3>Your personalized training plan</h3>
+                                <h3>Block sheet</h3>
                             </div>
-                            <span class="panel-badge">Week 3 of 4</span>
+                            <div class="week-nav" id="week-nav">
+                                <button class="ghost-button week-arrow" type="button" id="prev-week-button">Previous week</button>
+                                <span class="panel-badge" id="current-week-badge">Week 3 of 4</span>
+                                <button class="ghost-button week-arrow" type="button" id="next-week-button">Next week</button>
+                            </div>
                         </div>
 
-                        <div class="program-grid">
+                        <div class="block-overview">
                             <article class="panel-card emphasis-card">
-                                <p class="card-label">Program direction</p>
-                                <h4>Build bench momentum, improve squat force out of the hole, and manage deadlift fatigue.</h4>
-                                <p>
-                                    This block is customized around your current readiness, weak-point signals, and how your last sessions have actually gone.
-                                </p>
+                                <p class="card-label" id="selected-week-label">Week 3</p>
+                                <h4 id="selected-week-title">Highest stress week</h4>
+                                <p id="selected-week-description">Top-set expression appears, fatigue is watched closely, and the athlete gets more meaningful benchmark sessions.</p>
                             </article>
+                            <div class="block-week-grid" id="block-week-grid"></div>
+                        </div>
 
-                            <article class="day-card">
-                                <p class="card-label">Day 1</p>
-                                <h4>Competition squat + paused squat</h4>
-                                <p>Top set, controlled backoff work, and quad-biased accessories.</p>
-                            </article>
-                            <article class="day-card">
-                                <p class="card-label">Day 2</p>
-                                <h4>Bench volume + close grip bench</h4>
-                                <p>More practice density while recovery is supporting the work.</p>
-                            </article>
-                            <article class="day-card">
-                                <p class="card-label">Day 3</p>
-                                <h4>Deadlift exposure + front squat</h4>
-                                <p>Heavy enough to keep skill, light enough to stop fatigue drift.</p>
-                            </article>
-                            <article class="day-card">
-                                <p class="card-label">Day 4</p>
-                                <h4>Bench technique + upper back</h4>
-                                <p>An added exposure slot to keep bench progress moving.</p>
-                            </article>
+                        <div class="program-sheet-wrap">
+                            <table class="program-sheet">
+                                <thead id="program-sheet-head"></thead>
+                                <tbody id="program-sheet-body"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="new-block-panel">
+                            <div class="panel-header">
+                                <div>
+                                    <p class="eyebrow">Next Block</p>
+                                    <h3>Create next block</h3>
+                                </div>
+                                <span class="panel-badge" id="new-block-status">Available after week 4</span>
+                            </div>
+
+                            <div class="new-block-gate" id="new-block-gate">
+                                Complete week 4 first. Then this section should unlock, pull in data from the previous block, ask a few basic questions, and build the next block.
+                            </div>
+
+                            <form class="profile-form is-disabled" id="new-block-form">
+                                <label>
+                                    How did recovery feel this block?
+                                    <select id="block-recovery">
+                                        <option>Good overall</option>
+                                        <option>Manageable but tight</option>
+                                        <option>Too much accumulated fatigue</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Which lift needs the most attention next?
+                                    <select id="block-priority">
+                                        <option>Squat</option>
+                                        <option>Bench</option>
+                                        <option>Deadlift</option>
+                                    </select>
+                                </label>
+                                <label class="profile-span-2">
+                                    What should change in the next block?
+                                    <textarea id="block-notes" rows="3" placeholder="More bench exposure, lower deadlift fatigue, stronger squat positional work..."></textarea>
+                                </label>
+                                <button class="primary-button profile-save" type="button" id="create-block-button" disabled>Create next block</button>
+                            </form>
                         </div>
                     </section>
 
@@ -305,35 +435,35 @@
                     <section class="workspace-panel is-hidden" id="lifts-panel">
                         <div class="panel-header">
                             <div>
-                                <p class="eyebrow">Lift Feedback</p>
-                                <h3>Daily training and lift-specific feedback</h3>
+                                <p class="eyebrow">Workout Feedback</p>
+                                <h3>Overview feedback on your workout</h3>
                             </div>
-                            <span class="panel-badge">Squat review</span>
+                            <span class="panel-badge">Session review</span>
                         </div>
 
                         <div class="lifts-grid">
                             <article class="panel-card">
-                                <p class="card-label">Current lift note</p>
-                                <h4>Squat looks more like a strength issue than a balance issue.</h4>
+                                <p class="card-label">What can be better</p>
+                                <h4>Your bench work matched plan, but accessory execution can be tighter and easier to recover from.</h4>
                                 <p>
-                                    You are staying braced reasonably well. The main signal is slower force production out of the bottom, so the training fix is more quad and positional work, not just more cueing.
+                                    Workout feedback should summarize the whole day, not just one lift. That includes what matched plan, where execution slipped, and what matters most before the next session.
                                 </p>
                             </article>
 
                             <article class="panel-card">
-                                <p class="card-label">What the app tells you</p>
+                                <p class="card-label">Cues for next time</p>
                                 <ul class="clean-list">
-                                    <li>Your lift feedback should explain what is happening.</li>
-                                    <li>Your daily training feedback should connect to the next program change.</li>
-                                    <li>Your chatbot should help you understand progress in plain language.</li>
+                                    <li>Stay stacked and patient on the chest for competition bench.</li>
+                                    <li>Keep accessory work hard enough to matter, but not so sloppy it ruins recovery.</li>
+                                    <li>Use video review to decide whether the main issue is technical, fatigue-related, or programming-related.</li>
                                 </ul>
                             </article>
 
                             <article class="panel-card accent-card">
                                 <p class="card-label">Next programming change</p>
-                                <h4>Paused squat stays in. Deadlift backoff volume drops by one slot.</h4>
+                                <h4>Bench work stays on track, but the next pull day should stay capped if fatigue carries forward.</h4>
                                 <p>
-                                    The app is not only showing lift notes. It is using those notes to influence the next training decision.
+                                    This feedback should bridge the gap between today's workout and tomorrow's programming so the athlete understands why anything changes.
                                 </p>
                             </article>
                         </div>

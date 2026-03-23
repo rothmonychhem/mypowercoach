@@ -7,7 +7,7 @@ class InMemoryAccountRepository:
         self._accounts_by_id: dict[str, Account] = {}
         self._account_ids_by_email: dict[str, str] = {}
 
-    def add(self, account: Account) -> None:
+    def save(self, account: Account) -> None:
         self._accounts_by_id[account.account_id] = account
         self._account_ids_by_email[account.email] = account.account_id
 

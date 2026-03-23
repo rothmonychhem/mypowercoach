@@ -9,6 +9,7 @@ class AthleteProfiler:
             f"{level.capitalize()} athlete profile with {recoverability} recoverability.",
             f"Primary goal: {athlete.primary_goal}.",
             f"Training split targets {athlete.training_days_per_week} sessions each week.",
+            f"Equipment setup: {athlete.equipment}.",
         ]
         return level, focus_points
 

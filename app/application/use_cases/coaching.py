@@ -30,12 +30,16 @@ class CoachingService:
         session_quality: str,
         fatigue_level: str,
         notes: str | None,
+        exercises: list[dict] | None = None,
+        video_name: str | None = None,
     ) -> DailyFeedback:
         self._require_athlete(account_id)
         return self._feedback_composer.compose_daily_feedback(
             session_quality=session_quality,
             fatigue_level=fatigue_level,
             notes=notes,
+            exercises=exercises,
+            video_name=video_name,
         )
 
     def chat(self, account_id: str, message: str) -> ChatReply:
