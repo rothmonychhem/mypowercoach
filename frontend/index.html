@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myPowerCoach</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="background-orb orb-one"></div>
+    <div class="background-orb orb-two"></div>
+
+    <div class="page-shell">
+        <section class="view is-active" id="landing-view">
+            <header class="marketing-bar">
+                <div class="brand-lockup">
+                    <div class="brand-mark">mp</div>
+                    <div>
+                        <p class="eyebrow">Adaptive Powerlifting Coaching</p>
+                        <h1>myPowerCoach</h1>
+                    </div>
+                </div>
+
+                <div class="marketing-actions">
+                    <button class="ghost-button" data-view-target="auth-view" data-auth-mode="signin">Sign in</button>
+                    <button class="primary-button" data-view-target="auth-view" data-auth-mode="create">Create account</button>
+                </div>
+            </header>
+
+            <main class="landing-layout">
+                <section class="hero-card">
+                    <div class="hero-copy">
+                        <p class="eyebrow">A coach, not just a calculator</p>
+                        <h2>Personalized programming, daily feedback, and lift guidance built around how you actually train.</h2>
+                        <p class="hero-description">
+                            myPowerCoach is a digital coaching product for powerlifters. You create an account, enter your athlete profile, and get a personalized program, day-to-day guidance, feedback on how training is going, and coaching support for your lifts.
+                        </p>
+
+                        <div class="cta-row">
+                            <button class="primary-button" data-view-target="auth-view" data-auth-mode="create">Start your account</button>
+                            <button class="ghost-button" data-view-target="auth-view" data-auth-mode="signin">I already have an account</button>
+                        </div>
+                    </div>
+
+                    <div class="hero-preview">
+                        <article class="preview-panel preview-main">
+                            <p class="card-label">Today's coaching summary</p>
+                            <h3>Bench is trending up. Deadlift fatigue needs to stay capped.</h3>
+                            <p>
+                                The system adjusts volume, explains what changed, and gives athlete-facing cues instead of only showing numbers.
+                            </p>
+                        </article>
+
+                        <div class="preview-grid">
+                            <article class="preview-panel">
+                                <p class="card-label">Program</p>
+                                <strong>4-week block tailored to your profile</strong>
+                            </article>
+                            <article class="preview-panel">
+                                <p class="card-label">Daily feedback</p>
+                                <strong>Readiness, fatigue, and session guidance</strong>
+                            </article>
+                            <article class="preview-panel">
+                                <p class="card-label">Coach chat</p>
+                                <strong>Ask how training is going in plain language</strong>
+                            </article>
+                            <article class="preview-panel">
+                                <p class="card-label">Lift review</p>
+                                <strong>Technique feedback and training adjustments</strong>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="feature-grid">
+                    <article class="feature-card">
+                        <p class="eyebrow">1. Athlete Setup</p>
+                        <h3>Create your account</h3>
+                        <p>Enter your background, goals, schedule, lift numbers, and constraints so the coaching engine knows who it is programming for.</p>
+                    </article>
+                    <article class="feature-card">
+                        <p class="eyebrow">2. Personalized Program</p>
+                        <h3>Get a plan that fits you</h3>
+                        <p>The app generates a powerlifting program based on training age, recovery, priorities, and the kind of progress you can realistically handle.</p>
+                    </article>
+                    <article class="feature-card">
+                        <p class="eyebrow">3. Daily Guidance</p>
+                        <h3>Check in after training</h3>
+                        <p>Log how the day felt, get feedback on fatigue and execution, and see how the next week is adapting around your performance.</p>
+                    </article>
+                    <article class="feature-card">
+                        <p class="eyebrow">4. Lift Feedback</p>
+                        <h3>See how your training is going</h3>
+                        <p>Review program trends, ask the coach chatbot questions, and get lift-specific feedback for your daily training.</p>
+                    </article>
+                </section>
+            </main>
+        </section>
+
+        <section class="view is-hidden" id="auth-view">
+            <div class="auth-shell">
+                <section class="auth-copy">
+                    <button class="text-button" data-view-target="landing-view">Back to product</button>
+                    <p class="eyebrow">Account Access</p>
+                    <h2 id="auth-title">Create your coaching account</h2>
+                    <p id="auth-copy">
+                        Start with a profile that captures your goals, recovery context, and lifting background so the program is built around the athlete, not around a template.
+                    </p>
+
+                    <div class="auth-benefits">
+                        <article class="benefit-card">
+                            <strong>Personalized setup</strong>
+                            <p>Training age, schedule, goals, equipment, and limitations drive the first block.</p>
+                        </article>
+                        <article class="benefit-card">
+                            <strong>Ongoing coaching</strong>
+                            <p>Daily check-ins, program adaptation, and feedback all live inside one product flow.</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="auth-panel">
+                    <div class="auth-toggle">
+                        <button class="auth-mode-button is-selected" data-auth-mode="create">Create account</button>
+                        <button class="auth-mode-button" data-auth-mode="signin">Sign in</button>
+                    </div>
+
+                    <form class="auth-form" id="auth-form">
+                        <label>
+                            Email
+                            <input type="email" id="email" placeholder="maya@example.com" required>
+                        </label>
+                        <label>
+                            Password
+                            <input type="password" id="password" placeholder="Enter password" required>
+                        </label>
+                        <button class="primary-button auth-submit" type="submit" id="auth-submit">Create account</button>
+                        <button class="ghost-button" type="button" id="demo-entry">Enter demo workspace</button>
+                    </form>
+                </section>
+            </div>
+        </section>
+
+        <section class="view is-hidden" id="app-view">
+            <div class="app-shell">
+                <aside class="sidebar">
+                    <div class="brand-lockup">
+                        <div class="brand-mark">mp</div>
+                        <div>
+                            <p class="eyebrow">Coaching Workspace</p>
+                            <h1>myPowerCoach</h1>
+                        </div>
+                    </div>
+
+                    <section class="sidebar-card athlete-card">
+                        <p class="card-label">Athlete</p>
+                        <h3 id="workspace-athlete-name">Maya Torres</h3>
+                        <p id="workspace-athlete-copy">84 kg class, intermediate, 4 training days, building toward a strong next block.</p>
+                    </section>
+
+                    <nav class="nav">
+                        <button class="nav-link is-active" data-panel="today-panel">Daily feedback</button>
+                        <button class="nav-link" data-panel="program-panel">My program</button>
+                        <button class="nav-link" data-panel="chat-panel">Coach chatbot</button>
+                        <button class="nav-link" data-panel="lifts-panel">Lift feedback</button>
+                    </nav>
+
+                    <section class="sidebar-card">
+                        <p class="sidebar-title">What this app does</p>
+                        <p class="sidebar-copy">
+                            It acts like a coach: gives you a personalized plan, checks how the day went, explains your training, and helps you understand your lifts.
+                        </p>
+                    </section>
+                </aside>
+
+                <main class="workspace-main">
+                    <header class="workspace-topbar">
+                        <div>
+                            <p class="eyebrow">Signed-in Workspace</p>
+                            <h2>Train, check in, review, and ask questions in one place</h2>
+                        </div>
+
+                        <div class="topbar-actions">
+                            <button class="ghost-button" data-view-target="landing-view">View product</button>
+                            <button class="primary-button" data-signout>Sign out</button>
+                        </div>
+                    </header>
+
+                    <section class="workspace-panel is-active" id="today-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">Daily Feedback</p>
+                                <h3>How did training go today?</h3>
+                            </div>
+                            <span class="status-tag" id="daily-status">Readiness stable</span>
+                        </div>
+
+                        <div class="today-grid">
+                            <article class="panel-card">
+                                <p class="card-label">Today's coaching note</p>
+                                <h4>Bench can push, deadlift should stay contained.</h4>
+                                <p>
+                                    Your current signals say you can keep progressing bench volume, but heavy pull fatigue should not spill into the rest of the week.
+                                </p>
+                            </article>
+
+                            <form class="checkin-card" id="daily-checkin-form">
+                                <p class="card-label">Daily check-in</p>
+                                <label>
+                                    Session quality
+                                    <select id="session-quality">
+                                        <option value="great">Great</option>
+                                        <option value="solid" selected>Solid</option>
+                                        <option value="rough">Rough</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Fatigue
+                                    <select id="fatigue-level">
+                                        <option value="low">Low</option>
+                                        <option value="moderate" selected>Moderate</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Notes
+                                    <textarea id="daily-notes" rows="4" placeholder="Squat felt strong, deadlift felt heavy from the floor..."></textarea>
+                                </label>
+                                <button class="primary-button" type="submit">Save today's feedback</button>
+                            </form>
+                        </div>
+
+                        <article class="response-card" id="daily-response">
+                            <p class="card-label">Coach response</p>
+                            <p>
+                                Log your day and the coach will summarize what happened, what it means, and whether anything in your program should change.
+                            </p>
+                        </article>
+                    </section>
+
+                    <section class="workspace-panel is-hidden" id="program-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">My Program</p>
+                                <h3>Your personalized training plan</h3>
+                            </div>
+                            <span class="panel-badge">Week 3 of 4</span>
+                        </div>
+
+                        <div class="program-grid">
+                            <article class="panel-card emphasis-card">
+                                <p class="card-label">Program direction</p>
+                                <h4>Build bench momentum, improve squat force out of the hole, and manage deadlift fatigue.</h4>
+                                <p>
+                                    This block is customized around your current readiness, weak-point signals, and how your last sessions have actually gone.
+                                </p>
+                            </article>
+
+                            <article class="day-card">
+                                <p class="card-label">Day 1</p>
+                                <h4>Competition squat + paused squat</h4>
+                                <p>Top set, controlled backoff work, and quad-biased accessories.</p>
+                            </article>
+                            <article class="day-card">
+                                <p class="card-label">Day 2</p>
+                                <h4>Bench volume + close grip bench</h4>
+                                <p>More practice density while recovery is supporting the work.</p>
+                            </article>
+                            <article class="day-card">
+                                <p class="card-label">Day 3</p>
+                                <h4>Deadlift exposure + front squat</h4>
+                                <p>Heavy enough to keep skill, light enough to stop fatigue drift.</p>
+                            </article>
+                            <article class="day-card">
+                                <p class="card-label">Day 4</p>
+                                <h4>Bench technique + upper back</h4>
+                                <p>An added exposure slot to keep bench progress moving.</p>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="workspace-panel is-hidden" id="chat-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">Coach Chatbot</p>
+                                <h3>Ask how training is going</h3>
+                            </div>
+                            <span class="panel-badge">Product prototype</span>
+                        </div>
+
+                        <div class="chat-shell">
+                            <div class="chat-thread" id="chat-thread">
+                                <article class="chat-bubble coach">
+                                    You can ask things like "How is my bench progressing?", "Why did next week change?", or "What should I focus on in squat today?"
+                                </article>
+                            </div>
+
+                            <form class="chat-form" id="chat-form">
+                                <input type="text" id="chat-input" placeholder="Ask the coach how your training is going...">
+                                <button class="primary-button" type="submit">Send</button>
+                            </form>
+                        </div>
+                    </section>
+
+                    <section class="workspace-panel is-hidden" id="lifts-panel">
+                        <div class="panel-header">
+                            <div>
+                                <p class="eyebrow">Lift Feedback</p>
+                                <h3>Daily training and lift-specific feedback</h3>
+                            </div>
+                            <span class="panel-badge">Squat review</span>
+                        </div>
+
+                        <div class="lifts-grid">
+                            <article class="panel-card">
+                                <p class="card-label">Current lift note</p>
+                                <h4>Squat looks more like a strength issue than a balance issue.</h4>
+                                <p>
+                                    You are staying braced reasonably well. The main signal is slower force production out of the bottom, so the training fix is more quad and positional work, not just more cueing.
+                                </p>
+                            </article>
+
+                            <article class="panel-card">
+                                <p class="card-label">What the app tells you</p>
+                                <ul class="clean-list">
+                                    <li>Your lift feedback should explain what is happening.</li>
+                                    <li>Your daily training feedback should connect to the next program change.</li>
+                                    <li>Your chatbot should help you understand progress in plain language.</li>
+                                </ul>
+                            </article>
+
+                            <article class="panel-card accent-card">
+                                <p class="card-label">Next programming change</p>
+                                <h4>Paused squat stays in. Deadlift backoff volume drops by one slot.</h4>
+                                <p>
+                                    The app is not only showing lift notes. It is using those notes to influence the next training decision.
+                                </p>
+                            </article>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </section>
+    </div>
+
+    <script src="./app.js"></script>
+</body>
+</html>
