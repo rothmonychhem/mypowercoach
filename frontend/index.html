@@ -280,10 +280,13 @@
                                 <p class="eyebrow">Daily Feedback</p>
                                 <h3>Today's workout</h3>
                             </div>
-                            <span class="status-tag" id="daily-status">Ready to log</span>
+                            <div class="daily-header-actions">
+                                <button class="ghost-button" type="button" id="toggle-exercise-rail">Hide exercises</button>
+                                <span class="status-tag" id="daily-status">Ready to log</span>
+                            </div>
                         </div>
 
-                        <div class="exercise-slider-shell">
+                        <div class="exercise-slider-shell" id="exercise-slider-shell">
                             <button class="ghost-button slider-arrow" type="button" id="exercise-slider-prev" aria-label="Show previous exercises">Previous</button>
                             <div class="exercise-selector-list" id="exercise-selector-list"></div>
                             <button class="ghost-button slider-arrow" type="button" id="exercise-slider-next" aria-label="Show next exercises">Next</button>
@@ -305,6 +308,7 @@
                                         <span>Plan</span>
                                         <span>Reps</span>
                                         <span>Weight</span>
+                                        <span>RPE</span>
                                         <span>Video</span>
                                     </div>
                                     <div class="set-log-list" id="selected-set-list"></div>

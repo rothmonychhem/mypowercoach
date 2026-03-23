@@ -24,6 +24,10 @@ const selectedExerciseTitle = document.getElementById("selected-exercise-title")
 const selectedExercisePlan = document.getElementById("selected-exercise-plan");
 const selectedExerciseProgress = document.getElementById("selected-exercise-progress");
 const selectedSetList = document.getElementById("selected-set-list");
+const exerciseSliderShell = document.getElementById("exercise-slider-shell");
+const exerciseSliderPrev = document.getElementById("exercise-slider-prev");
+const exerciseSliderNext = document.getElementById("exercise-slider-next");
+const toggleExerciseRailButton = document.getElementById("toggle-exercise-rail");
 const blockWeekGrid = document.getElementById("block-week-grid");
 const prevWeekButton = document.getElementById("prev-week-button");
 const nextWeekButton = document.getElementById("next-week-button");
@@ -31,7 +35,8 @@ const currentWeekBadge = document.getElementById("current-week-badge");
 const selectedWeekLabel = document.getElementById("selected-week-label");
 const selectedWeekTitle = document.getElementById("selected-week-title");
 const selectedWeekDescription = document.getElementById("selected-week-description");
-const selectedWeekDays = document.getElementById("selected-week-days");
+const programSheetHead = document.getElementById("program-sheet-head");
+const programSheetBody = document.getElementById("program-sheet-body");
 const newBlockStatus = document.getElementById("new-block-status");
 const newBlockGate = document.getElementById("new-block-gate");
 const newBlockForm = document.getElementById("new-block-form");
@@ -40,6 +45,7 @@ const createBlockButton = document.getElementById("create-block-button");
 let authMode = "create";
 let selectedExerciseIndex = 0;
 let currentProgramWeek = 2;
+let exerciseRailCollapsed = false;
 let athleteProfile = {
     name: "Maya Torres",
     heightCm: "168",
@@ -61,30 +67,30 @@ let workoutPlan = [
         name: "Competition bench",
         summary: "Primary bench exposure for the day.",
         sets: [
-            { plannedReps: 5, plannedWeight: 82.5, completedReps: 5, completedWeight: 82.5, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, completedReps: 5, completedWeight: 82.5, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, completedReps: 5, completedWeight: 82.5, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, completedReps: 5, completedWeight: 82.5, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, completedReps: 5, completedWeight: 82.5, done: false, videoName: "" }
+            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 7.5, completedReps: 5, completedWeight: 82.5, completedRpe: 7.5, done: false, videoName: "" },
+            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 7.5, completedReps: 5, completedWeight: 82.5, completedRpe: 7.5, done: false, videoName: "" },
+            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 8, completedReps: 5, completedWeight: 82.5, completedRpe: 8, done: false, videoName: "" },
+            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 8, completedReps: 5, completedWeight: 82.5, completedRpe: 8, done: false, videoName: "" },
+            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 8.5, completedReps: 5, completedWeight: 82.5, completedRpe: 8.5, done: false, videoName: "" }
         ]
     },
     {
         name: "Close-grip bench",
         summary: "Accessory press to build triceps and bench carryover.",
         sets: [
-            { plannedReps: 6, plannedWeight: 72.5, completedReps: 6, completedWeight: 72.5, done: false, videoName: "" },
-            { plannedReps: 6, plannedWeight: 72.5, completedReps: 6, completedWeight: 72.5, done: false, videoName: "" },
-            { plannedReps: 6, plannedWeight: 72.5, completedReps: 6, completedWeight: 72.5, done: false, videoName: "" }
+            { plannedReps: 6, plannedWeight: 72.5, plannedRpe: 7.5, completedReps: 6, completedWeight: 72.5, completedRpe: 7.5, done: false, videoName: "" },
+            { plannedReps: 6, plannedWeight: 72.5, plannedRpe: 8, completedReps: 6, completedWeight: 72.5, completedRpe: 8, done: false, videoName: "" },
+            { plannedReps: 6, plannedWeight: 72.5, plannedRpe: 8, completedReps: 6, completedWeight: 72.5, completedRpe: 8, done: false, videoName: "" }
         ]
     },
     {
         name: "Chest-supported row",
         summary: "Upper-back support without extra low-back fatigue.",
         sets: [
-            { plannedReps: 10, plannedWeight: 55, completedReps: 10, completedWeight: 55, done: false, videoName: "" },
-            { plannedReps: 10, plannedWeight: 55, completedReps: 10, completedWeight: 55, done: false, videoName: "" },
-            { plannedReps: 10, plannedWeight: 55, completedReps: 10, completedWeight: 55, done: false, videoName: "" },
-            { plannedReps: 10, plannedWeight: 55, completedReps: 10, completedWeight: 55, done: false, videoName: "" }
+            { plannedReps: 10, plannedWeight: 55, plannedRpe: 7, completedReps: 10, completedWeight: 55, completedRpe: 7, done: false, videoName: "" },
+            { plannedReps: 10, plannedWeight: 55, plannedRpe: 7.5, completedReps: 10, completedWeight: 55, completedRpe: 7.5, done: false, videoName: "" },
+            { plannedReps: 10, plannedWeight: 55, plannedRpe: 8, completedReps: 10, completedWeight: 55, completedRpe: 8, done: false, videoName: "" },
+            { plannedReps: 10, plannedWeight: 55, plannedRpe: 8, completedReps: 10, completedWeight: 55, completedRpe: 8, done: false, videoName: "" }
         ]
     }
 ];
@@ -94,10 +100,50 @@ const blockWeeks = [
         title: "Volume base",
         description: "Establish technical volume, rebuild work capacity, and accumulate useful squat and bench practice.",
         days: [
-            { label: "Day 1", title: "Competition squat + paused squat", description: "Top set, controlled backoff work, and quad-biased accessories." },
-            { label: "Day 2", title: "Bench volume + close grip bench", description: "Base volume and stable pressing positions." },
-            { label: "Day 3", title: "Deadlift exposure + front squat", description: "Early block pull work without burying fatigue." },
-            { label: "Day 4", title: "Bench technique + upper back", description: "Extra frequency and upper-back support." }
+            {
+                label: "Day 1",
+                title: "Squat focus",
+                description: "Volume base for squat pattern and quad drive.",
+                exercises: [
+                    { name: "Competition squat", prescription: "1 top set + 4 x 5 @ 72%" },
+                    { name: "Paused squat", prescription: "3 x 4 @ 66%" },
+                    { name: "Romanian deadlift", prescription: "3 x 8 moderate" },
+                    { name: "Leg press", prescription: "3 x 12 hard but smooth" }
+                ]
+            },
+            {
+                label: "Day 2",
+                title: "Bench volume",
+                description: "Stable pressing positions and base volume.",
+                exercises: [
+                    { name: "Competition bench", prescription: "5 x 5 @ 75%" },
+                    { name: "Close-grip bench", prescription: "3 x 6 @ 70%" },
+                    { name: "Chest-supported row", prescription: "4 x 10" },
+                    { name: "Cable fly", prescription: "3 x 15" }
+                ]
+            },
+            {
+                label: "Day 3",
+                title: "Deadlift exposure",
+                description: "Pulling practice without burying recovery.",
+                exercises: [
+                    { name: "Competition deadlift", prescription: "1 top set + 3 x 4 @ 70%" },
+                    { name: "Front squat", prescription: "3 x 5 moderate" },
+                    { name: "Lat pulldown", prescription: "3 x 12" },
+                    { name: "Back extension", prescription: "3 x 15" }
+                ]
+            },
+            {
+                label: "Day 4",
+                title: "Bench technique",
+                description: "Extra bench frequency and upper-back support.",
+                exercises: [
+                    { name: "Tempo bench", prescription: "4 x 4 @ 68%" },
+                    { name: "Pin press", prescription: "3 x 5" },
+                    { name: "Seated cable row", prescription: "4 x 12" },
+                    { name: "Lateral raise", prescription: "3 x 18" }
+                ]
+            }
         ]
     },
     {
@@ -105,10 +151,50 @@ const blockWeeks = [
         title: "Load progression",
         description: "Push load gradually while keeping extra bench exposure and targeted quad work in place.",
         days: [
-            { label: "Day 1", title: "Squat intensity build", description: "Slightly heavier top exposure with paused support sets." },
-            { label: "Day 2", title: "Bench progression day", description: "Load builds while volume stays useful." },
-            { label: "Day 3", title: "Deadlift single + controlled backoff", description: "More specific pulling without unnecessary spillover fatigue." },
-            { label: "Day 4", title: "Bench technique + triceps", description: "Keep skill high and elbows healthy while pressing volume rises." }
+            {
+                label: "Day 1",
+                title: "Squat intensity build",
+                description: "Slightly heavier top exposure with paused support sets.",
+                exercises: [
+                    { name: "Competition squat", prescription: "1 top single + 4 x 4 @ 76%" },
+                    { name: "Paused squat", prescription: "3 x 3 @ 70%" },
+                    { name: "Romanian deadlift", prescription: "3 x 7" },
+                    { name: "Hack squat", prescription: "3 x 10" }
+                ]
+            },
+            {
+                label: "Day 2",
+                title: "Bench progression",
+                description: "Load builds while volume stays useful.",
+                exercises: [
+                    { name: "Competition bench", prescription: "5 x 4 @ 78%" },
+                    { name: "Close-grip bench", prescription: "3 x 5 @ 72%" },
+                    { name: "Chest-supported row", prescription: "4 x 8 heavier" },
+                    { name: "Dip variation", prescription: "3 x 10" }
+                ]
+            },
+            {
+                label: "Day 3",
+                title: "Deadlift single",
+                description: "More specific pulling without unnecessary spillover fatigue.",
+                exercises: [
+                    { name: "Competition deadlift", prescription: "1 top single + 3 x 3 @ 74%" },
+                    { name: "Front squat", prescription: "3 x 4" },
+                    { name: "Single-leg leg press", prescription: "3 x 10 each" },
+                    { name: "Weighted plank", prescription: "3 x 40 sec" }
+                ]
+            },
+            {
+                label: "Day 4",
+                title: "Bench technique",
+                description: "Keep skill high and elbows healthy while pressing volume rises.",
+                exercises: [
+                    { name: "Tempo bench", prescription: "4 x 4 @ 70%" },
+                    { name: "Spoto press", prescription: "3 x 5" },
+                    { name: "Seated cable row", prescription: "4 x 10" },
+                    { name: "Triceps pressdown", prescription: "3 x 15" }
+                ]
+            }
         ]
     },
     {
@@ -116,10 +202,50 @@ const blockWeeks = [
         title: "Highest stress week",
         description: "Top-set expression appears, fatigue is watched closely, and the athlete gets more meaningful benchmark sessions.",
         days: [
-            { label: "Day 1", title: "Competition squat + paused squat", description: "Highest-stress squat day with clear positional carryover work." },
-            { label: "Day 2", title: "Bench volume + close grip bench", description: "Main bench benchmark day for the block." },
-            { label: "Day 3", title: "Deadlift exposure + front squat", description: "Heavy enough to keep skill, light enough to stop fatigue drift." },
-            { label: "Day 4", title: "Bench technique + upper back", description: "An added exposure slot to keep bench progress moving." }
+            {
+                label: "Day 1",
+                title: "High-stress squat",
+                description: "Highest-stress squat day with clear positional carryover work.",
+                exercises: [
+                    { name: "Competition squat", prescription: "1 top single + 4 x 3 @ 80%" },
+                    { name: "Paused squat", prescription: "3 x 3 @ 72%" },
+                    { name: "Romanian deadlift", prescription: "3 x 6" },
+                    { name: "Leg extension", prescription: "3 x 15" }
+                ]
+            },
+            {
+                label: "Day 2",
+                title: "Bench benchmark",
+                description: "Main bench benchmark day for the block.",
+                exercises: [
+                    { name: "Competition bench", prescription: "5 x 3 @ 82.5%" },
+                    { name: "Close-grip bench", prescription: "3 x 5 @ 74%" },
+                    { name: "Chest-supported row", prescription: "4 x 8" },
+                    { name: "Cable fly", prescription: "3 x 12" }
+                ]
+            },
+            {
+                label: "Day 3",
+                title: "Controlled deadlift stress",
+                description: "Heavy enough to keep skill, light enough to stop fatigue drift.",
+                exercises: [
+                    { name: "Competition deadlift", prescription: "1 top single + 3 x 3 @ 77%" },
+                    { name: "Front squat", prescription: "3 x 4" },
+                    { name: "Lat pulldown", prescription: "4 x 10" },
+                    { name: "Weighted plank", prescription: "3 x 45 sec" }
+                ]
+            },
+            {
+                label: "Day 4",
+                title: "Extra bench exposure",
+                description: "An added exposure slot to keep bench progress moving.",
+                exercises: [
+                    { name: "Tempo bench", prescription: "4 x 3 @ 72%" },
+                    { name: "Pin press", prescription: "3 x 4" },
+                    { name: "Seated cable row", prescription: "4 x 10" },
+                    { name: "Rear delt fly", prescription: "3 x 18" }
+                ]
+            }
         ]
     },
     {
@@ -127,10 +253,46 @@ const blockWeeks = [
         title: "Pivot and recover",
         description: "Drop the least useful fatigue, protect movement quality, and set up the next block to start strong.",
         days: [
-            { label: "Day 1", title: "Squat pivot session", description: "Reduce fatigue while keeping squat pattern quality high." },
-            { label: "Day 2", title: "Bench maintenance", description: "Enough work to keep momentum without overstaying fatigue." },
-            { label: "Day 3", title: "Deadlift recovery exposure", description: "Fast pulls and low-cost accessories only." },
-            { label: "Day 4", title: "Upper back and tempo bench", description: "Low-fatigue work that sets up the next block cleanly." }
+            {
+                label: "Day 1",
+                title: "Squat pivot",
+                description: "Reduce fatigue while keeping squat pattern quality high.",
+                exercises: [
+                    { name: "Competition squat", prescription: "3 x 4 @ 67%" },
+                    { name: "Paused squat", prescription: "2 x 3 @ 60%" },
+                    { name: "Leg press", prescription: "2 x 10" }
+                ]
+            },
+            {
+                label: "Day 2",
+                title: "Bench maintenance",
+                description: "Enough work to keep momentum without overstaying fatigue.",
+                exercises: [
+                    { name: "Competition bench", prescription: "4 x 4 @ 70%" },
+                    { name: "Close-grip bench", prescription: "2 x 5 @ 65%" },
+                    { name: "Chest-supported row", prescription: "3 x 10" }
+                ]
+            },
+            {
+                label: "Day 3",
+                title: "Deadlift recovery",
+                description: "Fast pulls and low-cost accessories only.",
+                exercises: [
+                    { name: "Competition deadlift", prescription: "4 x 2 @ 65%" },
+                    { name: "Front squat", prescription: "2 x 4 light" },
+                    { name: "Back extension", prescription: "2 x 15" }
+                ]
+            },
+            {
+                label: "Day 4",
+                title: "Upper back and tempo bench",
+                description: "Low-fatigue work that sets up the next block cleanly.",
+                exercises: [
+                    { name: "Tempo bench", prescription: "3 x 4 @ 65%" },
+                    { name: "Seated cable row", prescription: "3 x 12" },
+                    { name: "Lateral raise", prescription: "3 x 15" }
+                ]
+            }
         ]
     }
 ];
@@ -212,16 +374,20 @@ function getWorkoutEntries() {
         plannedSets: exercise.sets.length,
         plannedReps: exercise.sets[0]?.plannedReps ?? 0,
         plannedWeight: exercise.sets[0]?.plannedWeight ?? 0,
+        plannedRpe: exercise.sets[0]?.plannedRpe ?? 0,
         completedSets: exercise.sets.filter((set) => set.done).length,
         completedReps: exercise.sets.reduce((sum, set) => sum + set.completedReps, 0),
         completedWeight:
             exercise.sets.reduce((sum, set) => sum + set.completedWeight, 0) / Math.max(exercise.sets.length, 1),
+        completedRpe: exercise.sets.reduce((sum, set) => sum + set.completedRpe, 0) / Math.max(exercise.sets.length, 1),
         sets: exercise.sets.map((set, index) => ({
             setNumber: index + 1,
             plannedReps: set.plannedReps,
             plannedWeight: set.plannedWeight,
+            plannedRpe: set.plannedRpe,
             completedReps: set.completedReps,
             completedWeight: set.completedWeight,
+            completedRpe: set.completedRpe,
             done: set.done,
             videoName: set.videoName
         }))
@@ -232,7 +398,10 @@ function buildExerciseSummary(exercises) {
     return exercises
         .map((exercise) => {
             const changedSets = exercise.sets.filter(
-                (set) => set.completedWeight !== set.plannedWeight || set.completedReps !== set.plannedReps
+                (set) =>
+                    set.completedWeight !== set.plannedWeight ||
+                    set.completedReps !== set.plannedReps ||
+                    set.completedRpe !== set.plannedRpe
             ).length;
             const feedback =
                 changedSets === 0
@@ -296,17 +465,56 @@ function renderProgramWeek() {
         )
         .join("");
 
-    selectedWeekDays.innerHTML = selectedWeek.days
-        .map(
-            (day) => `
-                <article class="day-card">
-                    <p class="card-label">${day.label}</p>
-                    <h4>${day.title}</h4>
-                    <p>${day.description}</p>
-                </article>
-            `
-        )
-        .join("");
+    const maxSlots = Math.max(...selectedWeek.days.map((day) => day.exercises.length));
+
+    programSheetHead.innerHTML = `
+        <tr>
+            <th class="program-sheet-slot">Slot</th>
+            ${selectedWeek.days
+                .map(
+                    (day) => `
+                        <th>
+                            <div class="program-sheet-day">
+                                <strong>${day.label}</strong>
+                                <span>${day.title}</span>
+                            </div>
+                        </th>
+                    `
+                )
+                .join("")}
+        </tr>
+    `;
+
+    programSheetBody.innerHTML = Array.from({ length: maxSlots }, (_, slotIndex) => {
+        const rowNumber = slotIndex + 1;
+        const cells = selectedWeek.days
+            .map((day) => {
+                const exercise = day.exercises[slotIndex];
+
+                if (!exercise) {
+                    return `<td><div class="program-sheet-cell program-sheet-empty">Open slot</div></td>`;
+                }
+
+                return `
+                    <td>
+                        <div class="program-sheet-cell">
+                            <div class="program-sheet-exercise">
+                                <strong>${exercise.name}</strong>
+                                <span>${exercise.prescription}</span>
+                            </div>
+                        </div>
+                    </td>
+                `;
+            })
+            .join("");
+
+        return `
+            <tr>
+                <th class="program-sheet-slot">Exercise ${rowNumber}</th>
+                ${cells}
+            </tr>
+        `;
+    }).join("");
 
     prevWeekButton.disabled = currentProgramWeek === 0;
     nextWeekButton.disabled = currentProgramWeek === blockWeeks.length - 1;
@@ -327,7 +535,6 @@ function renderWorkoutPlanner() {
             return `
                 <button class="exercise-selector-button ${index === selectedExerciseIndex ? "is-selected" : ""}" type="button" data-exercise-index="${index}">
                     <strong>${exercise.name}</strong>
-                    <span>${exercise.summary}</span>
                     <div class="exercise-meta">
                         <span>${exercise.sets.length} sets planned</span>
                         <span>${doneCount}/${exercise.sets.length} done</span>
@@ -348,7 +555,7 @@ function renderSelectedExercise() {
 
     const doneCount = exercise.sets.filter((set) => set.done).length;
     selectedExerciseTitle.textContent = exercise.name;
-    selectedExercisePlan.textContent = `${exercise.summary} Planned ${exercise.sets.length} sets.`;
+    selectedExercisePlan.textContent = `${exercise.summary} ${exercise.sets.length} planned sets.`;
     selectedExerciseProgress.textContent = `${doneCount} of ${exercise.sets.length} sets done`;
 
     selectedSetList.innerHTML = exercise.sets
@@ -359,9 +566,10 @@ function renderSelectedExercise() {
                         <input type="checkbox" data-field="done" ${set.done ? "checked" : ""} aria-label="${exercise.name} set ${index + 1} done">
                     </label>
                     <span class="set-label">Set ${index + 1}</span>
-                    <span class="planned-chip">Planned ${set.plannedReps} @ ${set.plannedWeight} kg</span>
+                    <span class="planned-chip">Planned ${set.plannedReps} @ ${set.plannedWeight} kg, RPE ${set.plannedRpe}</span>
                     <input type="number" min="0" max="30" value="${set.completedReps}" data-field="reps" aria-label="${exercise.name} set ${index + 1} reps">
                     <input type="number" min="0" max="400" step="0.5" value="${set.completedWeight}" data-field="weight" aria-label="${exercise.name} set ${index + 1} weight">
+                    <input type="number" min="5" max="10" step="0.5" value="${set.completedRpe}" data-field="rpe" aria-label="${exercise.name} set ${index + 1} rpe">
                     <div>
                         <input class="set-video-input" type="file" accept="video/*" data-field="video" aria-label="${exercise.name} set ${index + 1} video">
                         <div class="planned-chip">${set.videoName || "No set video yet"}</div>
@@ -370,6 +578,11 @@ function renderSelectedExercise() {
             `
         )
         .join("");
+}
+
+function renderExerciseRailState() {
+    exerciseSliderShell.classList.toggle("is-collapsed", exerciseRailCollapsed);
+    toggleExerciseRailButton.textContent = exerciseRailCollapsed ? "Show exercises" : "Hide exercises";
 }
 
 function renderProfile() {
@@ -474,6 +687,21 @@ exerciseSelectorList.addEventListener("click", (event) => {
 
     selectedExerciseIndex = Number(button.dataset.exerciseIndex);
     renderWorkoutPlanner();
+    exerciseRailCollapsed = true;
+    renderExerciseRailState();
+});
+
+exerciseSliderPrev.addEventListener("click", () => {
+    exerciseSelectorList.scrollBy({ left: -240, behavior: "smooth" });
+});
+
+exerciseSliderNext.addEventListener("click", () => {
+    exerciseSelectorList.scrollBy({ left: 240, behavior: "smooth" });
+});
+
+toggleExerciseRailButton.addEventListener("click", () => {
+    exerciseRailCollapsed = !exerciseRailCollapsed;
+    renderExerciseRailState();
 });
 
 selectedSetList.addEventListener("change", (event) => {
@@ -496,6 +724,10 @@ selectedSetList.addEventListener("change", (event) => {
 
     if (target.dataset.field === "weight") {
         exercise.sets[setIndex].completedWeight = Number(target.value);
+    }
+
+    if (target.dataset.field === "rpe") {
+        exercise.sets[setIndex].completedRpe = Number(target.value);
     }
 
     if (target.dataset.field === "video") {
@@ -623,4 +855,5 @@ setAuthMode("create");
 renderProfile();
 renderWorkoutPlanner();
 renderProgramWeek();
+renderExerciseRailState();
 setActivePanel("profile-panel");
