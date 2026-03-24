@@ -70,6 +70,9 @@ let selectedExerciseIndex = 0;
 let currentProgramWeek = 0;
 let weightUnit = "kg";
 let workflowNotice = "Save a day when you are really finished with the published workout. The next session should only publish after that confirmation.";
+let activePanelId = "profile-panel";
+
+const defaultChatGreeting = "Ask about today's focus, your squat cues, your bench setup, deadlift execution, fatigue, or why the next workout changed.";
 
 let athleteProfile = {
     name: "Maya Torres",
@@ -750,6 +753,10 @@ function openWorkspace(name) {
 }
 
 function setActivePanel(panelId) {
+    if (activePanelId === "chat-panel" && panelId !== "chat-panel") {
+        resetChatThread();
+    }
+
     navButtons.forEach((button) => {
         button.classList.toggle("is-active", button.dataset.panel === panelId);
     });
@@ -758,6 +765,12 @@ function setActivePanel(panelId) {
         panel.classList.toggle("is-hidden", panel.id !== panelId);
         panel.classList.toggle("is-active", panel.id === panelId);
     });
+
+    activePanelId = panelId;
+
+    if (panelId === "chat-panel" && !chatThread.children.length) {
+        resetChatThread();
+    }
 }
 
 function appendChatMessage(role, text) {
@@ -766,6 +779,13 @@ function appendChatMessage(role, text) {
     bubble.textContent = text;
     chatThread.appendChild(bubble);
     chatThread.scrollTop = chatThread.scrollHeight;
+}
+
+function resetChatThread() {
+    chatThread.innerHTML = "";
+    chatInput.value = "";
+    appendChatMessage("coach", defaultChatGreeting);
+    renderChatSuggestions();
 }
 
 function getLatestHistoryEntry() {
@@ -815,6 +835,30 @@ function getPrimaryFocusCue() {
     return "Deadlift is the live priority, so the coaching goal is to keep meaningful pulling exposures while managing the fatigue cost across the whole week.";
 }
 
+function inferChatLift(text) {
+    if (chatMatches(text, ["bench", "press", "pause", "leg drive"])) {
+        return "bench";
+    }
+    if (chatMatches(text, ["squat", "hole", "brace", "knee", "quad"])) {
+        return "squat";
+    }
+    if (chatMatches(text, ["deadlift", "pull", "hinge", "lockout", "wedge"])) {
+        return "deadlift";
+    }
+    return inferPriorityLift();
+}
+
+function buildLiftCueAnswer(liftName) {
+    const cuePack = getMainLiftCuePack(
+        {
+            exercises: [{ name: liftName === "bench" ? "Competition bench press" : liftName === "squat" ? "Competition squat" : "Competition deadlift" }]
+        },
+        athleteProfile
+    );
+    const liftLabel = liftName.charAt(0).toUpperCase() + liftName.slice(1);
+    return `${liftLabel} cues should stay specific to the lift you asked about. Focus on this today: ${cuePack.cues.join(" ")} Why it matters: ${cuePack.why}`;
+}
+
 function summarizeCurrentWorkout() {
     const currentDay = getCurrentDayDefinition();
     const topExercises = workoutPlan.slice(0, 3).map((exercise) => exercise.name).join(", ");
@@ -856,12 +900,17 @@ function buildSuggestedQuestions() {
         : priority === "squat"
             ? "How is my squat progressing?"
             : "How is my deadlift progressing?";
+    const cueQuestion = priority === "bench"
+        ? "What are my bench cues today?"
+        : priority === "squat"
+            ? "What are my squat cues today?"
+            : "What are my deadlift cues today?";
 
     return [
         `What should I focus on in ${currentDay.day.title.toLowerCase()}?`,
+        cueQuestion,
         liftQuestion,
-        "Why did the next workout change?",
-        "What does the weekly recap say?"
+        "Why did the next workout change?"
     ];
 }
 
@@ -881,14 +930,11 @@ function buildCoachReply(message) {
     const text = normalizeChatText(message);
     const currentDay = getCurrentDayDefinition();
     const latestHistory = getLatestHistoryEntry();
-    const weekHistory = getWeekHistory(trainingState.currentWeekIndex);
-    const weekCompletion = countCompletedDaysForWeek(trainingState.currentWeekIndex);
-    const weekTotal = currentDay.week.days.length;
-    const blockCompletion = countCompletedDaysForBlock();
-    const blockTotal = getTotalDaysInBlock();
     let answer = "";
 
-    if (chatMatches(text, ["block", "next workout", "next day", "change", "why"])) {
+    if (chatMatches(text, ["cue", "cues", "pointer", "pointers", "technique"])) {
+        answer = buildLiftCueAnswer(inferChatLift(text));
+    } else if (chatMatches(text, ["block", "next workout", "next day", "change", "why"])) {
         answer = `${summarizeBlockState()} ${explainNextWorkout()}`;
     } else if (chatMatches(text, ["today", "focus", currentDay.day.title.toLowerCase(), "session"])) {
         answer = `${summarizeCurrentWorkout()} ${getPrimaryFocusCue()} The best coaching move today is to finish the planned work cleanly enough that the next published day still fits the block.`;

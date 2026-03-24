@@ -11,29 +11,38 @@ class CoachChatService:
 
     def reply(self, athlete: AthleteProfile, program: ProgramOverview, message: str) -> ChatReply:
         text = self._normalize(message)
+        intent = self._infer_intent(text)
 
-        if self._matches(text, "why", "change", "next week", "next workout", "adjust"):
+        if intent == "cues":
+            answer = self._cue_answer(athlete, program, self._infer_lift(text, athlete))
+        elif intent == "change":
             answer = self._change_answer(program)
-        elif self._matches(text, "today", "focus", "session"):
+        elif intent == "today":
             answer = self._today_answer(athlete, program)
-        elif self._matches(text, "bench", "pause", "leg drive", "touch point"):
+        elif intent == "bench":
             answer = self._lift_answer(athlete, program, "bench")
-        elif self._matches(text, "squat", "hole", "brace", "quad"):
+        elif intent == "squat":
             answer = self._lift_answer(athlete, program, "squat")
-        elif self._matches(text, "deadlift", "pull", "hinge", "back fatigue"):
+        elif intent == "deadlift":
             answer = self._lift_answer(athlete, program, "deadlift")
-        elif self._matches(text, "fatigue", "recovery", "tired", "beat up"):
+        elif intent == "fatigue":
             answer = self._fatigue_answer(athlete, program)
-        elif self._matches(text, "weak", "weakness", "sticking point", "limiter"):
+        elif intent == "weakness":
             answer = self._weakness_answer(program)
-        elif self._matches(text, "week", "block", "recap", "phase", "peak", "pivot", "taper"):
+        elif intent == "block":
             answer = self._block_answer(program)
-        elif self._matches(text, "progress", "progressing", "going"):
+        elif intent == "progress":
             answer = self._progress_answer(athlete, program)
         else:
             answer = self._general_answer(athlete, program)
 
-        llm_answer = self._llm_answer(athlete=athlete, program=program, message=message, fallback_answer=answer)
+        llm_answer = self._llm_answer(
+            athlete=athlete,
+            program=program,
+            message=message,
+            fallback_answer=answer,
+            intent=intent,
+        )
         if llm_answer:
             answer = llm_answer
 
@@ -50,6 +59,29 @@ class CoachChatService:
     @staticmethod
     def _matches(text: str, *keywords: str) -> bool:
         return any(keyword in text for keyword in keywords)
+
+    def _infer_intent(self, text: str) -> str:
+        if self._matches(text, "cue", "cues", "pointer", "pointers", "technique"):
+            return "cues"
+        if self._matches(text, "why", "change", "next week", "next workout", "adjust"):
+            return "change"
+        if self._matches(text, "today", "focus", "session"):
+            return "today"
+        if self._matches(text, "bench", "pause", "leg drive", "touch point"):
+            return "bench"
+        if self._matches(text, "squat", "hole", "brace", "quad", "knee"):
+            return "squat"
+        if self._matches(text, "deadlift", "pull", "hinge", "back fatigue", "wedge", "lockout"):
+            return "deadlift"
+        if self._matches(text, "fatigue", "recovery", "tired", "beat up"):
+            return "fatigue"
+        if self._matches(text, "weak", "weakness", "sticking point", "limiter"):
+            return "weakness"
+        if self._matches(text, "week", "block", "recap", "phase", "peak", "pivot", "taper"):
+            return "block"
+        if self._matches(text, "progress", "progressing", "going"):
+            return "progress"
+        return "general"
 
     def _today_answer(self, athlete: AthleteProfile, program: ProgramOverview) -> str:
         first_week = program.weeks[0]
@@ -89,6 +121,42 @@ class CoachChatService:
             emphasis += f" The current block is already aiming at {limiter.lower()}."
 
         return emphasis
+
+    def _cue_answer(self, athlete: AthleteProfile, program: ProgramOverview, lift_name: str) -> str:
+        notes = " ".join([athlete.notes, *athlete.constraints]).lower()
+        limiter = self._best_limiter(program, lift_name)
+        if lift_name == "bench":
+            cues = [
+                "Set the upper back before the handoff so the chest stays high and the touch point stays repeatable.",
+                "Start leg drive before the press so force transfers into the bar instead of arriving late.",
+                "Keep the forearms stacked under the bar so the press stays efficient through the sticking point.",
+            ]
+            if "off chest" in notes or "off the chest" in notes:
+                cues[2] = "Stay patient at the touch and keep the bar path tight so the first inches off the chest do not leak force."
+            why = "Bench cues matter because cleaner setup, touch position, and pressure transfer usually improve carryover more than just forcing harder reps."
+        elif lift_name == "squat":
+            cues = [
+                "Brace before the descent and keep pressure through the full foot so the bar stays over the mid-foot.",
+                "Let the knees and hips break together so you do not dump forward out of the bottom.",
+                "Drive the upper back into the bar as you stand so the torso and hips rise together.",
+            ]
+            if "knee" in notes:
+                cues[1] = "Keep the knees tracking over the foot on the way down and out of the hole so position does not collapse under load."
+            if "hips shoot" in notes or "out of the hole" in notes:
+                cues[2] = "Push evenly through the floor so the chest and hips rise together instead of the hips shooting up first."
+            why = "Squat cues matter because the lift usually improves when balance and position stay clean through the hard range, not when you just grind harder."
+        else:
+            cues = [
+                "Set the lats before the pull so the bar stays close instead of drifting away.",
+                "Build the wedge first and then push the floor away instead of yanking the bar loose.",
+                "Stay over the bar long enough that the lockout finishes from position, not from a chase forward.",
+            ]
+            if "lockout" in notes or "at knee" in notes:
+                cues[2] = "Keep the bar pinned to you past the knee so the finish is a strong lockout, not a drift away from the body."
+            why = "Deadlift cues matter because the pull is usually best when the start is patient, the bar stays close, and the hardest range is attacked from a stable setup."
+
+        limiter_text = f" The current block is trying to improve {limiter.lower()}." if limiter else ""
+        return f"{lift_name.capitalize()} cues should stay specific to the lift you asked about.{limiter_text} Focus on these cues: {' '.join(cues)} Why: {why}"
 
     def _change_answer(self, program: ProgramOverview) -> str:
         first_note = program.progression_notes[0] if program.progression_notes else ""
@@ -144,6 +212,7 @@ class CoachChatService:
         program: ProgramOverview,
         message: str,
         fallback_answer: str,
+        intent: str,
     ) -> str | None:
         if self._llm_chat_client is None:
             return None
@@ -152,8 +221,11 @@ class CoachChatService:
         if not callable(generate):
             return None
 
+        if intent == "cues":
+            return None
+
         system_prompt = self._build_system_prompt()
-        user_prompt = self._build_user_prompt(athlete, program, message, fallback_answer)
+        user_prompt = self._build_user_prompt(athlete, program, message, fallback_answer, intent)
         response = generate(system_prompt, user_prompt)
         if not isinstance(response, str):
             return None
@@ -167,6 +239,8 @@ class CoachChatService:
             "Answer like a good coach: specific, practical, and grounded in the athlete context provided. "
             "Do not invent data that is not in the context. "
             "Keep the answer under 140 words, avoid generic motivational filler, and explain the training logic clearly. "
+            "Directly answer the user request instead of drifting into a general overview of the lift. "
+            "If the athlete asks for cues, give concrete execution pointers with a short why, not general lift commentary. "
             "If the athlete asks about today's work, focus on the current block and first upcoming session. "
             "If the context is incomplete, say what is known and give the most reasonable coaching answer from that context."
         )
@@ -177,6 +251,7 @@ class CoachChatService:
         program: ProgramOverview,
         message: str,
         fallback_answer: str,
+        intent: str,
     ) -> str:
         first_week = program.weeks[0]
         first_day = first_week.days[0]
@@ -196,6 +271,7 @@ class CoachChatService:
             f"Current week flow: {', '.join(week.label for week in program.weeks)}.\n"
             f"First upcoming session: {first_week.label} {first_day.day_label}, focus {first_day.focus}. Exercises: {day_summary}.\n"
             f"Programming notes: {progression_notes}\n"
+            f"Detected intent: {intent}\n"
             f"Rule-based coaching baseline answer: {fallback_answer}\n"
             f"User question: {message}\n"
             "Write the final answer for the athlete."
@@ -233,6 +309,15 @@ class CoachChatService:
                 return limiter
         return None
 
+    def _infer_lift(self, text: str, athlete: AthleteProfile) -> str:
+        if self._matches(text, "bench", "press", "leg drive", "touch point"):
+            return "bench"
+        if self._matches(text, "squat", "hole", "brace", "quad", "knee"):
+            return "squat"
+        if self._matches(text, "deadlift", "pull", "hinge", "wedge", "lockout"):
+            return "deadlift"
+        return self._weakest_lift(athlete)
+
     def _suggested_questions(self, program: ProgramOverview) -> list[str]:
         lift_question = "How is my bench progressing?"
         if any("squat" in limiter.lower() for limiter in program.target_limiters):
@@ -242,6 +327,7 @@ class CoachChatService:
 
         return [
             "What should I focus on today?",
+            f"What are my {lift_question.split()[2].lower()} cues today?" if lift_question.startswith("How is my") else "What are my main lift cues today?",
             "Why did the next workout change?",
             "What weakness is this block trying to improve?",
             lift_question,

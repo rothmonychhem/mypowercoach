@@ -40,12 +40,13 @@ class AthleteNeeds:
 @dataclass(frozen=True, slots=True)
 class BlockTypeProfile:
     block_type: str
-    week_labels: tuple[str, str, str, str]
-    week_summaries: tuple[str, str, str, str]
-    percentage_shift: tuple[float, float, float, float]
-    rpe_shift: tuple[float, float, float, float]
-    set_shift: tuple[int, int, int, int]
-    rep_shift: tuple[int, int, int, int]
+    week_labels: tuple[str, ...]
+    week_summaries: tuple[str, ...]
+    library_week_indices: tuple[int, ...]
+    percentage_shift: tuple[float, ...]
+    rpe_shift: tuple[float, ...]
+    set_shift: tuple[int, ...]
+    rep_shift: tuple[int, ...]
     max_exercises_per_day: int | None
     accessory_cap: int | None
 
@@ -181,15 +182,16 @@ BLOCK_TYPE_LIBRARY: dict[str, BlockTypeProfile] = {
         block_type="off_season",
         week_labels=("Foundation", "Volume build", "Strength bridge", "Pivot"),
         week_summaries=(
-            "Start the block with more variation, more muscle-building work, and lower stress per exposure.",
-            "Drive volume higher while keeping technique and recovery under control.",
-            "Bridge toward heavier work without abandoning variation and weak-point work.",
+            "Start the block with higher-rep strength work, more variation, and enough room to accumulate useful training volume.",
+            "Drive volume and rep work higher while keeping technique and recovery under control.",
+            "Bridge toward heavier work without abandoning rep quality, variation, and weak-point work.",
             "Drop fatigue, keep quality high, and leave room to push the next block.",
         ),
-        percentage_shift=(-0.02, -0.01, 0.0, -0.02),
-        rpe_shift=(-0.5, -0.25, 0.0, -0.5),
+        library_week_indices=(0, 1, 2, 3),
+        percentage_shift=(-0.05, -0.03, -0.015, -0.08),
+        rpe_shift=(-0.75, -0.5, -0.25, -1.0),
         set_shift=(1, 1, 0, -1),
-        rep_shift=(1, 1, 0, 0),
+        rep_shift=(2, 2, 1, 1),
         max_exercises_per_day=None,
         accessory_cap=None,
     ),
@@ -202,6 +204,7 @@ BLOCK_TYPE_LIBRARY: dict[str, BlockTypeProfile] = {
             "Expose heavier work and sharper top-end effort without letting fatigue run the week.",
             "Reduce fatigue, keep movement quality high, and set up the next block cleanly.",
         ),
+        library_week_indices=(0, 1, 2, 3),
         percentage_shift=(0.0, 0.0, 0.0, 0.0),
         rpe_shift=(0.0, 0.0, 0.0, 0.0),
         set_shift=(0, 0, 0, 0),
@@ -218,6 +221,7 @@ BLOCK_TYPE_LIBRARY: dict[str, BlockTypeProfile] = {
             "Rebuild momentum with moderate loading while keeping the weak area exposed at a manageable cost.",
             "Finish the pivot fresher than you started it so the next block can be more aggressive.",
         ),
+        library_week_indices=(0, 1, 2, 3),
         percentage_shift=(-0.05, -0.04, -0.02, -0.05),
         rpe_shift=(-1.0, -0.75, -0.5, -1.0),
         set_shift=(-1, -1, -1, -1),
@@ -225,37 +229,48 @@ BLOCK_TYPE_LIBRARY: dict[str, BlockTypeProfile] = {
         max_exercises_per_day=5,
         accessory_cap=2,
     ),
+    "deload": BlockTypeProfile(
+        block_type="deload",
+        week_labels=("Deload",),
+        week_summaries=(
+            "Reduce fatigue quickly and keep only enough work to maintain rhythm and movement quality before normal training resumes.",
+        ),
+        library_week_indices=(3,),
+        percentage_shift=(-0.08,),
+        rpe_shift=(-1.25,),
+        set_shift=(-2,),
+        rep_shift=(-1,),
+        max_exercises_per_day=4,
+        accessory_cap=1,
+    ),
     "peak": BlockTypeProfile(
         block_type="peak",
-        week_labels=("Specificity", "Heavy build", "Realization", "Freshen up"),
+        week_labels=("Heavy build", "Realization"),
         week_summaries=(
-            "Shift the block toward competition lifts and reduce fluff so heavy work has room to matter.",
-            "Drive heavier specific work while trimming accessory fatigue that could blur performance.",
-            "Let the athlete touch the sharpest work of the block with specificity prioritized over volume.",
-            "Freshen up without losing the feel of the competition lifts.",
+            "Shift hard toward competition specificity while trimming nearly all nonessential fatigue.",
+            "Touch the heaviest specific work of the cycle with competition lifts prioritized and very little extra fatigue.",
         ),
-        percentage_shift=(0.015, 0.025, 0.035, -0.01),
-        rpe_shift=(0.25, 0.25, 0.5, -0.5),
-        set_shift=(0, -1, -1, -1),
-        rep_shift=(-1, -1, -1, 0),
-        max_exercises_per_day=5,
-        accessory_cap=2,
+        library_week_indices=(1, 2),
+        percentage_shift=(0.015, 0.03),
+        rpe_shift=(0.25, 0.5),
+        set_shift=(0, -1),
+        rep_shift=(-1, -1),
+        max_exercises_per_day=3,
+        accessory_cap=0,
     ),
     "taper": BlockTypeProfile(
         block_type="taper",
-        week_labels=("Volume cut", "Sharpness", "Meet week", "Transition"),
+        week_labels=("Taper",),
         week_summaries=(
-            "Start dropping fatigue fast while keeping enough specific work to hold onto rhythm.",
-            "Keep the lifts sharp with small exposures and far less background fatigue.",
-            "Do the minimum effective work needed to stay confident and coordinated going into testing or competition.",
-            "Use a very easy transition week before the next full block starts.",
+            "Use a short taper with very low volume, specific exposures, and minimal fatigue so the athlete arrives fresh and coordinated.",
         ),
-        percentage_shift=(-0.02, 0.0, -0.05, -0.08),
-        rpe_shift=(-0.75, -0.5, -1.0, -1.25),
-        set_shift=(-2, -2, -3, -3),
-        rep_shift=(-1, -2, -2, -1),
-        max_exercises_per_day=3,
-        accessory_cap=1,
+        library_week_indices=(2,),
+        percentage_shift=(0.02,),
+        rpe_shift=(-0.75,),
+        set_shift=(-3,),
+        rep_shift=(-2,),
+        max_exercises_per_day=2,
+        accessory_cap=0,
     ),
 }
 
@@ -273,17 +288,18 @@ class ProgramGenerator:
         weeks = self._build_weeks(athlete, training_days, athlete_needs, block_profile)
         block_focus = self._block_focus_summary(athlete_needs)
 
+        week_count = len(weeks)
         summary = (
-            f"A {athlete_level} 4-week block for {athlete.primary_goal.lower()}, built on a {split} "
+            f"A {athlete_level} {week_count}-week block for {athlete.primary_goal.lower()}, built on a {split} "
             f"using a {block_type.replace('_', ' ')} structure with bench frequency prioritized "
             f"and a block emphasis on {block_focus.lower()}."
         )
 
         progression_notes = [
-            f"Block type is {block_type.replace('_', ' ')}, so the structure, exercise density, and loading all reflect that phase rather than repeating the same 4-week shape every time.",
+            f"Block type is {block_type.replace('_', ' ')}, so the structure, exercise density, and loading all reflect that phase rather than repeating the same default block shape every time.",
             "Bench appears more often than squat and deadlift because it usually tolerates higher weekly frequency.",
             "Variation slots are chosen by a scoring engine that balances specificity, weak-point match, fatigue cost, and pain constraints instead of reusing the same combo every block.",
-            "Main competition lifts start around RPE 6-7 and build toward RPE 8-8.5 before the pivot week.",
+            "Main competition lifts should rise or fall according to the phase, with shorter taper, peak, and deload phases using much less total work than standard development blocks.",
             "Suggested loads are anchored to the athlete's current PRs and rounded to realistic gym jumps, usually 2.5 kg for upper-body work and 5 kg for lower-body work.",
             "Weak areas should get enough exposure to improve, but pain-sensitive regions should get support with a lower fatigue cost instead of reckless overload.",
             "Sets, reps, and load should move together: heavier weeks usually come with fewer reps or slightly less total volume rather than mindlessly adding stress everywhere.",
@@ -568,12 +584,14 @@ class ProgramGenerator:
         athlete_needs: AthleteNeeds,
         block_profile: BlockTypeProfile,
     ) -> ProgramExercisePrescription:
-        progression = PROGRESSION_LIBRARY[slot["progression_key"]][week_index]
+        phase_index = block_profile.library_week_indices[week_index]
+        progression = PROGRESSION_LIBRARY[slot["progression_key"]][phase_index]
         progression = self._progression_for_block_type(progression, slot, week_index, block_profile)
         prescribed_weight, reference_lift, percent_of_reference = self._build_load_prescription(
             athlete=athlete,
             slot=slot,
             week_index=week_index,
+            phase_index=phase_index,
             athlete_needs=athlete_needs,
             block_profile=block_profile,
         )
@@ -733,6 +751,7 @@ class ProgramGenerator:
         athlete: AthleteProfile,
         slot: dict,
         week_index: int,
+        phase_index: int,
         athlete_needs: AthleteNeeds,
         block_profile: BlockTypeProfile,
     ) -> tuple[float | None, str | None, float | None]:
@@ -740,7 +759,7 @@ class ProgramGenerator:
         if load_anchor is None:
             load_anchor = self._infer_load_anchor(slot["name"])
 
-        percentage = LOAD_LIBRARY[slot["progression_key"]][week_index]
+        percentage = LOAD_LIBRARY[slot["progression_key"]][phase_index]
         if load_anchor is None or percentage is None:
             return None, None, None
 
@@ -787,11 +806,56 @@ class ProgramGenerator:
         rpe = progression.rpe + block_profile.rpe_shift[week_index]
         category = slot["category"]
 
-        if category == "accessory" and block_profile.block_type in {"peak", "taper", "pivot"}:
-            sets = min(sets, progression.sets if block_profile.block_type == "pivot" else max(2, progression.sets - 1))
+        if category == "accessory" and block_profile.block_type in {"peak", "taper", "pivot", "deload"}:
+            sets = min(sets, progression.sets if block_profile.block_type == "pivot" else max(1, progression.sets - 1))
         if block_profile.block_type == "peak" and category == "competition":
             reps = min(reps, max(1, progression.reps - 1))
+        if block_profile.block_type == "deload":
+            if category == "competition":
+                sets = min(max(2, sets), 4)
+                reps = min(max(2, reps), 5)
+                rpe = min(rpe, 6.5)
+            elif category == "variation":
+                sets = min(max(1, sets), 3)
+                reps = min(max(3, reps), 6)
+                rpe = min(rpe, 6.0)
+            else:
+                sets = min(max(1, sets), 2)
+                reps = min(max(6, reps), 10)
+                rpe = min(rpe, 6.0)
+        if block_profile.block_type == "off_season":
+            if week_index < 3:
+                if category == "competition":
+                    sets = max(4, sets)
+                    reps = max(4, reps)
+                    rpe = min(rpe, 8.0)
+                elif category == "variation":
+                    sets = max(3, sets)
+                    reps = max(5, reps)
+                    rpe = min(rpe, 8.0)
+                else:
+                    sets = max(3, sets)
+                    reps = max(8, reps)
+                    rpe = min(max(rpe, 6.5), 8.0)
+            else:
+                if category == "competition":
+                    sets = max(2, sets)
+                    reps = max(4, reps)
+                    rpe = min(rpe, 6.5)
+                elif category == "variation":
+                    sets = max(2, sets)
+                    reps = max(5, reps)
+                    rpe = min(rpe, 6.0)
+                else:
+                    reps = max(10, reps)
+                    rpe = min(rpe, 6.5)
         if block_profile.block_type == "taper":
+            if category == "competition":
+                sets = min(max(1, sets), 3)
+                reps = min(max(1, reps), 3)
+            elif category == "variation":
+                sets = min(max(1, sets), 2)
+                reps = min(max(2, reps), 5)
             rpe = min(rpe, 7.5)
 
         return ProgressionStep(
@@ -908,7 +972,9 @@ class ProgramGenerator:
             return "taper"
         if any(term in notes for term in ("peak", "peaking", "competition prep", "meet prep", "meet block", "test max", "1rm")):
             return "peak"
-        if any(term in notes for term in ("deload", "pivot", "recover", "recovery block", "fatigued", "burned out")):
+        if any(term in notes for term in ("deload", "unload")):
+            return "deload"
+        if any(term in notes for term in ("pivot", "recover", "recovery block", "fatigued", "burned out")):
             return "pivot"
         if any(term in goal for term in ("hypertrophy", "build muscle", "off season", "off-season", "growth")):
             return "off_season"
@@ -928,6 +994,8 @@ class ProgramGenerator:
             slots = template["exercise_slots"]
             if block_profile.block_type == "off_season":
                 template["objective"] += " Variation and targeted support stay higher because this block is building capacity."
+            if block_profile.block_type == "deload":
+                template["objective"] += " Session density is intentionally low so fatigue drops without losing movement quality."
             if block_profile.block_type == "pivot":
                 template["objective"] += " Exercise count and fatigue are intentionally trimmed so recovery can rebound."
             if block_profile.block_type == "peak":
@@ -950,6 +1018,37 @@ class ProgramGenerator:
             if block_profile.max_exercises_per_day is not None:
                 template["exercise_slots"] = slots[: block_profile.max_exercises_per_day]
 
+        if block_profile.block_type == "deload":
+            for template in adjusted_templates:
+                kept_slots: list[dict] = []
+                competition_slots = [slot for slot in template["exercise_slots"] if slot["category"] == "competition"]
+                variation_slots = [slot for slot in template["exercise_slots"] if slot["category"] == "variation"]
+                accessory_slots = [slot for slot in template["exercise_slots"] if slot["category"] == "accessory"]
+
+                if competition_slots:
+                    kept_slots.append(competition_slots[0])
+                kept_slots.extend(variation_slots[:1])
+                kept_slots.extend(accessory_slots[:1])
+                template["exercise_slots"] = kept_slots[: max(1, block_profile.max_exercises_per_day or len(kept_slots))]
+
+        if block_profile.block_type == "peak":
+            for template in adjusted_templates:
+                template["exercise_slots"] = self._make_phase_more_specific(
+                    template["exercise_slots"],
+                    replace_variations=True,
+                    keep_variation_if_same_comp_exists=True,
+                    max_slots=block_profile.max_exercises_per_day,
+                )
+
+        if block_profile.block_type == "taper":
+            for template in adjusted_templates:
+                template["exercise_slots"] = self._make_phase_more_specific(
+                    template["exercise_slots"],
+                    replace_variations=True,
+                    keep_variation_if_same_comp_exists=True,
+                    max_slots=block_profile.max_exercises_per_day,
+                )
+
         if block_profile.block_type in {"peak", "taper"}:
             for template in adjusted_templates:
                 for slot in template["exercise_slots"]:
@@ -961,6 +1060,68 @@ class ProgramGenerator:
                         slot["notes"] = "Competition deadlift stays specific while the setup, wedge, and first push from the floor remain the priority."
 
         return adjusted_templates
+
+    def _make_phase_more_specific(
+        self,
+        slots: list[dict],
+        *,
+        replace_variations: bool,
+        keep_variation_if_same_comp_exists: bool,
+        max_slots: int | None,
+    ) -> list[dict]:
+        specific_slots: list[dict] = []
+        competition_anchors = {
+            (slot.get("load_anchor") or self._infer_load_anchor(slot["name"]))
+            for slot in slots
+            if slot["category"] == "competition"
+        }
+
+        for slot in slots:
+            candidate = dict(slot)
+            anchor = candidate.get("load_anchor") or self._infer_load_anchor(candidate["name"])
+
+            if (
+                replace_variations
+                and candidate["category"] == "variation"
+                and anchor is not None
+                and (not keep_variation_if_same_comp_exists or anchor not in competition_anchors)
+            ):
+                candidate = self._competition_specific_slot(anchor)
+
+            if candidate["category"] == "accessory":
+                continue
+
+            if any(existing["name"] == candidate["name"] for existing in specific_slots):
+                continue
+
+            specific_slots.append(candidate)
+
+        return specific_slots[: max(1, max_slots or len(specific_slots))]
+
+    def _competition_specific_slot(self, load_anchor: str) -> dict:
+        if load_anchor == "bench":
+            return self._slot(
+                "Competition bench press",
+                "competition",
+                "bench_technique",
+                "Keep the bench exposure competition-specific so the phase sharpens setup, pause discipline, and bar path.",
+                load_anchor="bench",
+            )
+        if load_anchor == "squat":
+            return self._slot(
+                "Competition squat",
+                "competition",
+                "squat_secondary",
+                "Keep the squat exposure competition-specific so the phase sharpens balance, depth, and ascent timing.",
+                load_anchor="squat",
+            )
+        return self._slot(
+            "Competition deadlift",
+            "competition",
+            "deadlift_secondary",
+            "Keep the deadlift exposure competition-specific so the phase sharpens setup, wedge, and the first pull from the floor.",
+            load_anchor="deadlift",
+        )
 
     def _bench_primary_support(self, athlete_needs: AthleteNeeds) -> dict:
         if athlete_needs.bench_off_chest_focus:
