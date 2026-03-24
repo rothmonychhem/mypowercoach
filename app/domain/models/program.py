@@ -12,6 +12,7 @@ class ProgramExercisePrescription:
     reference_lift: str | None = None
     percent_of_reference: float | None = None
     notes: str = ""
+    selection_reason: str = ""
 
 
 @dataclass(slots=True)

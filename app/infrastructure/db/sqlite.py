@@ -45,6 +45,26 @@ class SQLiteDatabase:
                     constraints_json TEXT NOT NULL,
                     FOREIGN KEY(account_id) REFERENCES accounts(account_id)
                 );
+
+                CREATE TABLE IF NOT EXISTS exercises (
+                    exercise_id TEXT PRIMARY KEY,
+                    slot_key TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    progression_key TEXT NOT NULL,
+                    notes TEXT NOT NULL,
+                    load_anchor TEXT,
+                    specificity REAL NOT NULL,
+                    fatigue_cost REAL NOT NULL,
+                    emphasis_tags_json TEXT NOT NULL,
+                    movement_tags_json TEXT NOT NULL DEFAULT '[]',
+                    soreness_tags_json TEXT NOT NULL DEFAULT '[]',
+                    phase_tags_json TEXT NOT NULL,
+                    helpful_tags_json TEXT NOT NULL,
+                    costly_tags_json TEXT NOT NULL,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    UNIQUE(slot_key, name)
+                );
                 """
             )
             self._ensure_column(connection, "athlete_profiles", "height_cm", "REAL NOT NULL DEFAULT 170")
@@ -52,6 +72,9 @@ class SQLiteDatabase:
             self._ensure_column(connection, "athlete_profiles", "equipment", "TEXT NOT NULL DEFAULT 'Raw'")
             self._ensure_column(connection, "athlete_profiles", "preferred_block_type", "TEXT NOT NULL DEFAULT ''")
             self._ensure_column(connection, "athlete_profiles", "notes", "TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(connection, "exercises", "sort_order", "INTEGER NOT NULL DEFAULT 0")
+            self._ensure_column(connection, "exercises", "movement_tags_json", "TEXT NOT NULL DEFAULT '[]'")
+            self._ensure_column(connection, "exercises", "soreness_tags_json", "TEXT NOT NULL DEFAULT '[]'")
 
     @staticmethod
     def _ensure_column(

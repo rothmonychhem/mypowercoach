@@ -8,6 +8,10 @@ from app.domain.models.program import (
     ProgramOverview,
     ProgramWeek,
 )
+from app.domain.services.exercise_selector import (
+    ExerciseSelectionContext,
+    RuleBasedExerciseSelector,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -257,6 +261,9 @@ BLOCK_TYPE_LIBRARY: dict[str, BlockTypeProfile] = {
 
 
 class ProgramGenerator:
+    def __init__(self, exercise_selector: RuleBasedExerciseSelector | None = None) -> None:
+        self._exercise_selector = exercise_selector or RuleBasedExerciseSelector()
+
     def generate(self, athlete: AthleteProfile, athlete_level: str, focus_points: list[str]) -> ProgramOverview:
         training_days = self._validated_training_days(athlete.training_days_per_week)
         split = f"{training_days}-day powerlifting split"
@@ -275,6 +282,7 @@ class ProgramGenerator:
         progression_notes = [
             f"Block type is {block_type.replace('_', ' ')}, so the structure, exercise density, and loading all reflect that phase rather than repeating the same 4-week shape every time.",
             "Bench appears more often than squat and deadlift because it usually tolerates higher weekly frequency.",
+            "Variation slots are chosen by a scoring engine that balances specificity, weak-point match, fatigue cost, and pain constraints instead of reusing the same combo every block.",
             "Main competition lifts start around RPE 6-7 and build toward RPE 8-8.5 before the pivot week.",
             "Suggested loads are anchored to the athlete's current PRs and rounded to realistic gym jumps, usually 2.5 kg for upper-body work and 5 kg for lower-body work.",
             "Weak areas should get enough exposure to improve, but pain-sensitive regions should get support with a lower fatigue cost instead of reckless overload.",
@@ -336,21 +344,7 @@ class ProgramGenerator:
         athlete_needs: AthleteNeeds,
         block_profile: BlockTypeProfile,
     ) -> list[dict]:
-        squat_variation = self._squat_variation(athlete)
-        deadlift_variation = self._deadlift_variation(athlete)
-        row_variation = self._row_variation(athlete)
-        bench_variation = self._bench_variation(athlete)
-        bench_primary_support = self._bench_primary_support(athlete_needs)
-        bench_secondary_variation = self._bench_secondary_variation(athlete_needs)
-        bench_rep_variation = self._bench_rep_variation(athlete_needs)
-        squat_primary_accessory = self._squat_primary_accessory(athlete_needs)
-        posterior_chain_accessory = "Reverse hyper" if athlete_needs.lower_back_sensitivity else "Back extension"
-        posterior_chain_progression = "back_health" if athlete_needs.lower_back_sensitivity else "posterior_chain"
-        posterior_chain_note = (
-            "Low-cost lower-back and posterior-chain support with fatigue capped."
-            if athlete_needs.lower_back_sensitivity
-            else "Posterior-chain endurance with low skill demand."
-        )
+        selection_context = self._selection_context(athlete_needs, block_profile)
         main_deadlift_note = (
             "Primary deadlift exposure with spinal fatigue managed more carefully because low-back stress is a known constraint."
             if athlete_needs.lower_back_sensitivity
@@ -362,12 +356,103 @@ class ProgramGenerator:
             else "Secondary deadlift slot for position and speed."
         )
 
+        day1_primary = self._slot("Competition bench press", "competition", "bench_intensity", "Primary bench exposure for the week.")
+        bench_primary_support = self._select_slot(
+            "bench_primary_support",
+            selection_context,
+            primary_day_tags=("horizontal_press", "pec", "triceps"),
+            existing_slots=[day1_primary],
+        )
+
+        day2_primary = self._slot("Competition deadlift", "competition", "deadlift_primary", main_deadlift_note)
+        quad_support_accessory = self._select_slot(
+            "quad_support_accessory",
+            selection_context,
+            primary_day_tags=("hinge", "posterior_chain", "bracing"),
+            existing_slots=[day2_primary],
+        )
+        row_variation = self._select_slot(
+            "row_variation",
+            selection_context,
+            primary_day_tags=("hinge", "posterior_chain", "upper_back"),
+            existing_slots=[
+                day2_primary,
+                quad_support_accessory,
+                self._slot("Cable hip abductor", "accessory", "single_leg", "Hip stability and glute-med support.", load_anchor="squat"),
+                self._slot("Lat pulldown", "accessory", "row_support", "Lat strength for deadlift positioning.", load_anchor="deadlift"),
+            ],
+        )
+
+        bench_secondary_variation = self._select_slot(
+            "bench_secondary_variation",
+            selection_context,
+            primary_day_tags=("horizontal_press", "pec", "triceps"),
+            existing_slots=[],
+        )
+        squat_variation = self._select_slot(
+            "squat_secondary_variation",
+            selection_context,
+            primary_day_tags=("squat_pattern", "quads", "bracing"),
+            existing_slots=[bench_secondary_variation],
+        )
+        quad_support_midweek = self._select_slot(
+            "quad_support_accessory",
+            selection_context,
+            primary_day_tags=("squat_pattern", "quads", "bracing"),
+            existing_slots=[bench_secondary_variation, squat_variation],
+        )
+        posterior_chain_accessory = self._select_slot(
+            "posterior_chain_accessory",
+            selection_context,
+            primary_day_tags=("squat_pattern", "posterior_chain"),
+            existing_slots=[
+                bench_secondary_variation,
+                squat_variation,
+                quad_support_midweek,
+                self._slot("Leg curl", "accessory", "posterior_chain", "Hamstring support.", load_anchor="deadlift"),
+            ],
+        )
+
+        deadlift_variation = self._select_slot(
+            "deadlift_secondary_variation",
+            selection_context,
+            primary_day_tags=("hinge", "posterior_chain", "bracing"),
+            existing_slots=[],
+        )
+        bench_rep_variation = self._select_slot(
+            "bench_rep_variation",
+            selection_context,
+            primary_day_tags=("horizontal_press", "pec", "triceps"),
+            existing_slots=[
+                deadlift_variation,
+                self._slot("Copenhagen plank", "accessory", "trunk_gpp", "Adductor and trunk support.", load_anchor=None),
+            ],
+        )
+
+        day5_primary = self._slot("Competition squat", "competition", "squat_primary", "Primary squat exposure for the week.")
+        squat_primary_accessory = self._select_slot(
+            "squat_primary_accessory",
+            selection_context,
+            primary_day_tags=("squat_pattern", "quads", "bracing"),
+            existing_slots=[day5_primary],
+        )
+        bench_variation = self._select_slot(
+            "bench_closeout_variation",
+            selection_context,
+            primary_day_tags=("horizontal_press", "pec", "triceps"),
+            existing_slots=[
+                day5_primary,
+                squat_primary_accessory,
+                self._slot("Bulgarian split squat", "accessory", "single_leg", "Single-leg control and leg volume.", load_anchor="squat"),
+            ],
+        )
+
         five_day_templates = [
             {
                 "focus": "Primary bench day",
                 "objective": "Open the week with the main bench exposure and upper-body assistance that supports it.",
                 "exercise_slots": [
-                    self._slot("Competition bench press", "competition", "bench_intensity", "Primary bench exposure for the week."),
+                    day1_primary,
                     bench_primary_support,
                     self._slot("Overhead press", "accessory", "press_assistance", "Secondary press for shoulder strength."),
                     self._slot("Lateral raise", "accessory", "arm_isolation", "Shoulder hypertrophy support."),
@@ -380,11 +465,11 @@ class ProgramGenerator:
                 "focus": "Competition deadlift day",
                 "objective": "Place the main conventional deadlift exposure early in the week and keep lower-body accessories controlled.",
                 "exercise_slots": [
-                    self._slot("Competition deadlift", "competition", "deadlift_primary", main_deadlift_note),
-                    self._slot("Leg press", "accessory", "single_leg", "Lower-body volume without high technical cost.", load_anchor="squat"),
+                    day2_primary,
+                    quad_support_accessory,
                     self._slot("Cable hip abductor", "accessory", "single_leg", "Hip stability and glute-med support.", load_anchor="squat"),
                     self._slot("Lat pulldown", "accessory", "row_support", "Lat strength for deadlift positioning.", load_anchor="deadlift"),
-                    self._slot(row_variation, "accessory", "row_support", "Extra pulling support for the hinge days.", load_anchor="deadlift"),
+                    row_variation,
                     self._slot("Lat pullover", "accessory", "triceps_upper_back", "Lats without adding spinal fatigue.", load_anchor="bench"),
                 ],
             },
@@ -393,17 +478,17 @@ class ProgramGenerator:
                 "objective": "Use a secondary bench and a secondary squat to build muscle and positional quality mid-week.",
                 "exercise_slots": [
                     bench_secondary_variation,
-                    self._slot(squat_variation, "variation", "squat_hypertrophy", "High-rep squat support and positional work."),
-                    self._slot("Hack squat", "accessory", "single_leg", "Quad work without another barbell squat cost.", load_anchor="squat"),
+                    squat_variation,
+                    quad_support_midweek,
                     self._slot("Leg curl", "accessory", "posterior_chain", "Hamstring support.", load_anchor="deadlift"),
-                    self._slot(posterior_chain_accessory, "accessory", posterior_chain_progression, posterior_chain_note, load_anchor="deadlift"),
+                    posterior_chain_accessory,
                 ],
             },
             {
                 "focus": "Secondary deadlift and bench repetition",
                 "objective": "Add a second hinge touchpoint with lower cost, then a repetition bench and smaller upper-body work.",
                 "exercise_slots": [
-                    self._slot(deadlift_variation, "variation", "deadlift_secondary", secondary_deadlift_note),
+                    self._with_objective_note(deadlift_variation, secondary_deadlift_note),
                     self._slot("Copenhagen plank", "accessory", "trunk_gpp", "Adductor and trunk support.", load_anchor=None),
                     bench_rep_variation,
                     self._slot("Incline dumbbell curl", "accessory", "arm_isolation", "Biceps support.", load_anchor="bench"),
@@ -414,12 +499,12 @@ class ProgramGenerator:
             },
             {
                 "focus": "Competition squat day",
-                "objective": "Close the week with the main squat exposure and a final paused bench slot.",
+                "objective": "Close the week with the main squat exposure and a final bench support slot.",
                 "exercise_slots": [
-                    self._slot("Competition squat", "competition", "squat_primary", "Primary squat exposure for the week."),
+                    day5_primary,
                     squat_primary_accessory,
                     self._slot("Bulgarian split squat", "accessory", "single_leg", "Single-leg control and leg volume.", load_anchor="squat"),
-                    self._slot(bench_variation, "variation", "bench_hypertrophy", "Final bench exposure of the week with longer time under tension."),
+                    bench_variation,
                     self._slot("Leg extension", "accessory", "arm_isolation", "Quad isolation to push local volume.", load_anchor="squat"),
                     self._slot("Sit-up", "accessory", "trunk_gpp", "Trunk flexion work.", load_anchor=None),
                     self._slot("Leg raise", "accessory", "trunk_gpp", "Anterior core support.", load_anchor=None),
@@ -428,26 +513,16 @@ class ProgramGenerator:
         ]
 
         if athlete_needs.knee_stability_focus:
-            five_day_templates[4]["exercise_slots"][1] = self._slot(
-                "Tempo goblet squat",
-                "accessory",
-                "single_leg",
-                "Patterning and knee-control work to reinforce stable tracking.",
-                load_anchor="squat",
+            five_day_templates[1]["exercise_slots"][1] = self._select_slot(
+                "quad_support_accessory",
+                selection_context,
+                primary_day_tags=("hinge", "posterior_chain", "bracing"),
+                existing_slots=[day2_primary],
             )
 
         if athlete_needs.bench_priority:
             five_day_templates[3]["objective"] = (
                 "Add a second hinge touchpoint with lower cost while keeping the extra bench slot meaningful because bench is a priority."
-            )
-
-        if athlete_needs.squat_priority:
-            five_day_templates[2]["exercise_slots"][2] = self._slot(
-                "Front-foot elevated split squat",
-                "accessory",
-                "single_leg",
-                "Quad-biased unilateral work to help squat drive without another heavy barbell cost.",
-                load_anchor="squat",
             )
 
         if training_days == 5:
@@ -473,10 +548,10 @@ class ProgramGenerator:
                 "focus": "Competition squat and bench closeout",
                 "objective": "Finish the week with the main squat slot and a final bench touchpoint.",
                 "exercise_slots": [
-                    self._slot("Competition squat", "competition", "squat_primary", "Primary squat exposure for the week."),
+                    day5_primary,
                     self._slot("Bulgarian split squat", "accessory", "single_leg", "Single-leg control and leg volume.", load_anchor="squat"),
-                    self._slot(bench_variation, "variation", "bench_hypertrophy", "Final bench exposure of the week with controlled fatigue."),
-                    self._slot(row_variation, "accessory", "row_support", "Upper-back support for stable pressing.", load_anchor="deadlift"),
+                    bench_variation,
+                    row_variation,
                     self._slot("Leg extension", "accessory", "arm_isolation", "Quad isolation to round out the week.", load_anchor="squat"),
                     self._slot("Weighted plank", "accessory", "trunk_gpp", "Trunk work to finish the week.", load_anchor=None),
                 ],
@@ -512,6 +587,7 @@ class ProgramGenerator:
             reference_lift=reference_lift,
             percent_of_reference=percent_of_reference,
             notes=slot["notes"],
+            selection_reason=slot.get("selection_reason", ""),
         )
 
     @staticmethod
@@ -521,6 +597,7 @@ class ProgramGenerator:
         progression_key: str,
         notes: str,
         load_anchor: str | None = None,
+        selection_reason: str = "",
     ) -> dict:
         return {
             "name": name,
@@ -528,7 +605,128 @@ class ProgramGenerator:
             "progression_key": progression_key,
             "notes": notes,
             "load_anchor": load_anchor,
+            "selection_reason": selection_reason,
         }
+
+    @staticmethod
+    def _with_objective_note(slot: dict, prefix_note: str) -> dict:
+        updated_slot = dict(slot)
+        updated_slot["notes"] = f"{prefix_note} {slot['notes']}".strip()
+        return updated_slot
+
+    @staticmethod
+    def _selection_context(
+        athlete_needs: AthleteNeeds,
+        block_profile: BlockTypeProfile,
+    ) -> ExerciseSelectionContext:
+        return ExerciseSelectionContext(
+            block_type=block_profile.block_type,
+            lower_back_sensitivity=athlete_needs.lower_back_sensitivity,
+            bench_priority=athlete_needs.bench_priority,
+            squat_priority=athlete_needs.squat_priority,
+            deadlift_priority=athlete_needs.deadlift_priority,
+            leg_drive_focus=athlete_needs.leg_drive_focus,
+            knee_stability_focus=athlete_needs.knee_stability_focus,
+            squat_bottom_focus=athlete_needs.squat_bottom_focus,
+            deadlift_floor_focus=athlete_needs.deadlift_floor_focus,
+            deadlift_lockout_focus=athlete_needs.deadlift_lockout_focus,
+            bench_off_chest_focus=athlete_needs.bench_off_chest_focus,
+            bench_lockout_focus=athlete_needs.bench_lockout_focus,
+        )
+
+    def _select_slot(
+        self,
+        slot_key: str,
+        context: ExerciseSelectionContext,
+        primary_day_tags: tuple[str, ...] = (),
+        existing_slots: list[dict] | None = None,
+    ) -> dict:
+        existing_slots = existing_slots or []
+        day_context = ExerciseSelectionContext(
+            block_type=context.block_type,
+            lower_back_sensitivity=context.lower_back_sensitivity,
+            bench_priority=context.bench_priority,
+            squat_priority=context.squat_priority,
+            deadlift_priority=context.deadlift_priority,
+            leg_drive_focus=context.leg_drive_focus,
+            knee_stability_focus=context.knee_stability_focus,
+            squat_bottom_focus=context.squat_bottom_focus,
+            deadlift_floor_focus=context.deadlift_floor_focus,
+            deadlift_lockout_focus=context.deadlift_lockout_focus,
+            bench_off_chest_focus=context.bench_off_chest_focus,
+            bench_lockout_focus=context.bench_lockout_focus,
+            primary_day_tags=primary_day_tags,
+            accumulated_movement_tags=self._accumulated_tags(existing_slots, "movement"),
+            accumulated_soreness_tags=self._accumulated_tags(existing_slots, "soreness"),
+            accumulated_day_fatigue=self._accumulated_day_fatigue(existing_slots),
+        )
+        return self._exercise_selector.select_slot(slot_key, day_context)
+
+    def _accumulated_tags(self, slots: list[dict], kind: str) -> tuple[str, ...]:
+        values: list[str] = []
+        for slot in slots:
+            tags = slot.get(f"{kind}_tags")
+            if tags:
+                values.extend(tags)
+                continue
+            movement_tags, soreness_tags = self._infer_slot_profiles(slot)
+            values.extend(movement_tags if kind == "movement" else soreness_tags)
+        return tuple(values)
+
+    def _accumulated_day_fatigue(self, slots: list[dict]) -> float:
+        total = 0.0
+        for slot in slots:
+            if "fatigue_cost" in slot:
+                total += float(slot["fatigue_cost"])
+            else:
+                total += self._infer_slot_fatigue(slot)
+        return round(total, 2)
+
+    @staticmethod
+    def _infer_slot_profiles(slot: dict) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        progression_key = slot.get("progression_key", "")
+        name = slot.get("name", "").lower()
+
+        if "bench" in name or "press" in name or "fly" in name:
+            return ("horizontal_press", "pec", "triceps"), ("pec", "front_delts", "triceps")
+        if "squat" in name or "leg press" in name or "leg extension" in name:
+            return ("squat_pattern", "quads", "bracing"), ("quads", "glutes")
+        if "deadlift" in name or "back extension" in name or "pull-through" in name:
+            return ("hinge", "posterior_chain", "bracing"), ("hamstrings", "glutes", "low_back")
+        if "row" in name or "lat" in name:
+            return ("upper_back", "lats"), ("lats", "upper_back")
+        if progression_key == "single_leg":
+            return ("single_leg", "quads"), ("quads", "glutes")
+        if progression_key == "posterior_chain":
+            return ("posterior_chain", "hinge"), ("hamstrings", "glutes")
+        return (), ()
+
+    @staticmethod
+    def _infer_slot_fatigue(slot: dict) -> float:
+        progression_key = slot.get("progression_key", "")
+        category = slot.get("category", "")
+        if category == "competition":
+            return 4.0
+        fatigue_by_progression = {
+            "bench_intensity": 4.0,
+            "bench_volume": 3.4,
+            "bench_technique": 3.0,
+            "bench_hypertrophy": 2.9,
+            "squat_primary": 4.1,
+            "squat_secondary": 3.5,
+            "squat_hypertrophy": 3.1,
+            "deadlift_primary": 4.2,
+            "deadlift_secondary": 3.2,
+            "posterior_chain": 2.5,
+            "back_health": 1.8,
+            "press_assistance": 2.8,
+            "row_support": 2.4,
+            "single_leg": 2.4,
+            "trunk_gpp": 1.2,
+            "triceps_upper_back": 1.8,
+            "arm_isolation": 1.4,
+        }
+        return fatigue_by_progression.get(progression_key, 2.2)
 
     def _build_load_prescription(
         self,

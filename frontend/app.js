@@ -20,6 +20,10 @@ const weekProgressTitle = document.getElementById("week-progress-title");
 const weekProgressCopy = document.getElementById("week-progress-copy");
 const blockProgressTitle = document.getElementById("block-progress-title");
 const blockProgressCopy = document.getElementById("block-progress-copy");
+const dailyWorkflowMessage = document.getElementById("daily-workflow-message");
+const mainLiftCuesTitle = document.getElementById("main-lift-cues-title");
+const mainLiftCuesWhy = document.getElementById("main-lift-cues-why");
+const mainLiftCuesList = document.getElementById("main-lift-cues-list");
 const chatForm = document.getElementById("chat-form");
 const chatThread = document.getElementById("chat-thread");
 const chatInput = document.getElementById("chat-input");
@@ -65,6 +69,7 @@ let authMode = "create";
 let selectedExerciseIndex = 0;
 let currentProgramWeek = 0;
 let weightUnit = "kg";
+let workflowNotice = "Save a day when you are really finished with the published workout. The next session should only publish after that confirmation.";
 
 let athleteProfile = {
     name: "Maya Torres",
@@ -389,7 +394,8 @@ function createTrainingState() {
         currentWeekIndex: 0,
         currentDayIndex: 0,
         completedDays: {},
-        workoutHistory: []
+        workoutHistory: [],
+        workflowNotice
     };
 }
 
@@ -510,6 +516,117 @@ function buildDayCompletionSummary(exercises) {
     return { totalSets, doneSets, attachedVideos };
 }
 
+function buildWorkoutConfirmationMessage(currentDay, completionSummary) {
+    const incompleteSets = completionSummary.totalSets - completionSummary.doneSets;
+    const completionLine = `${completionSummary.doneSets}/${completionSummary.totalSets} sets are marked done.`;
+    const incompleteLine = incompleteSets > 0
+        ? ` ${incompleteSets} set${incompleteSets === 1 ? "" : "s"} are still unchecked.`
+        : "";
+
+    return `Are you sure you're done with ${currentDay.week.label} ${currentDay.day.label}? ${completionLine}${incompleteLine} Saving this will publish the next workout.`;
+}
+
+function buildWorkflowNoticeAfterSave(savedDay, nextPointer, weekWasCompleted) {
+    if (isBlockComplete()) {
+        return `${savedDay.week.label} ${savedDay.day.label} is saved. Week 4 is complete and the full block is now complete.`;
+    }
+
+    const nextWeek = blockWeeks[nextPointer.weekIndex];
+    const nextDay = nextWeek.days[nextPointer.dayIndex];
+    if (weekWasCompleted) {
+        return `${savedDay.week.label} is complete. ${nextWeek.label} ${nextDay.label} is now published in daily feedback.`;
+    }
+
+    return `${savedDay.week.label} ${savedDay.day.label} is saved. ${nextWeek.label} ${nextDay.label} is now published in daily feedback.`;
+}
+
+function getMainLiftCuePack(day, athlete) {
+    const primaryExercise = day.exercises[0];
+    const primaryName = primaryExercise?.name ?? "Main lift";
+    const notes = `${athlete.notes ?? ""} ${athlete.constraints ?? ""}`.toLowerCase();
+
+    if (primaryName.toLowerCase().includes("bench")) {
+        const cues = [
+            "Pull the shoulder blades down and back before the handoff so the chest stays high and the touch point stays repeatable.",
+            "Press your feet into the floor before the bar leaves the chest so leg drive transfers into the bar instead of arriving late.",
+            "Keep the forearms stacked under the bar so the press stays efficient through the sticking point."
+        ];
+
+        if (notes.includes("leg drive")) {
+            cues[1] = "Start leg drive before the press, not after it, so the bar leaves the chest with the whole body working together.";
+        }
+        if (notes.includes("off the chest") || notes.includes("off chest")) {
+            cues[2] = "Stay patient at the touch and keep the bar path tight so the first inches off the chest do not leak force.";
+        }
+
+        return {
+            title: `${primaryName} cues`,
+            why: "These cues matter because bench usually improves when setup, touch position, and pressure transfer are cleaner, not when you just force more effort into a messy rep.",
+            cues
+        };
+    }
+
+    if (primaryName.toLowerCase().includes("squat")) {
+        const cues = [
+            "Brace before the descent and keep pressure through the full foot so the bar stays over the mid-foot.",
+            "Let the knees and hips break together so you do not dump forward out of the bottom.",
+            "Drive the upper back into the bar as you come up so the torso rises with the hips."
+        ];
+
+        if (notes.includes("knee") || notes.includes("knee cave")) {
+            cues[1] = "Keep the knees tracking over the foot on the way down and out of the hole so position does not collapse under load.";
+        }
+        if (notes.includes("hips shoot") || notes.includes("out of the hole")) {
+            cues[2] = "Push evenly through the floor out of the hole so the chest and hips rise together instead of the hips shooting up first.";
+        }
+
+        return {
+            title: `${primaryName} cues`,
+            why: "These cues matter because squat execution is mostly about staying balanced and keeping the bar over a strong position through the hardest range.",
+            cues
+        };
+    }
+
+    if (primaryName.toLowerCase().includes("deadlift")) {
+        const cues = [
+            "Set the lats before the pull so the bar stays close instead of drifting away from you.",
+            "Push the floor away at the start instead of yanking the bar with loose position.",
+            "Stay over the bar long enough that the knees clear and the lockout finishes with the whole posterior chain."
+        ];
+
+        if (notes.includes("off the floor") || notes.includes("wedge")) {
+            cues[1] = "Build the wedge first and then push the floor away so the bar breaks from the floor without losing position.";
+        }
+        if (notes.includes("lockout") || notes.includes("at the knee")) {
+            cues[2] = "Keep the bar pinned to you past the knee so the finish is a strong lockout, not a chase forward.";
+        }
+
+        return {
+            title: `${primaryName} cues`,
+            why: "These cues matter because deadlift execution gets better when the bar stays close, the start is patient, and the hard range is attacked from a stable position.",
+            cues
+        };
+    }
+
+    return {
+        title: `${primaryName} cues`,
+        why: "These pointers should make the main work more repeatable and technically useful instead of just making the session feel harder.",
+        cues: [
+            "Use the first working sets to lock in the same setup every time.",
+            "Keep the bar path and body position as repeatable as possible.",
+            "Let execution quality decide whether load should move up today."
+        ]
+    };
+}
+
+function renderMainLiftCues() {
+    const currentDay = getCurrentDayDefinition();
+    const cuePack = getMainLiftCuePack(currentDay.day, athleteProfile);
+    mainLiftCuesTitle.textContent = cuePack.title;
+    mainLiftCuesWhy.textContent = cuePack.why;
+    mainLiftCuesList.innerHTML = cuePack.cues.map((cue) => `<li>${cue}</li>`).join("");
+}
+
 function advanceTrainingPointer() {
     if (isBlockComplete()) {
         return;
@@ -530,12 +647,14 @@ function advanceTrainingPointer() {
 }
 
 function savePrototypeState() {
+    trainingState.workflowNotice = workflowNotice;
     const payload = {
         athleteProfile,
         trainingState,
         weightUnit,
         currentProgramWeek,
-        lastWorkoutReview
+        lastWorkoutReview,
+        workflowNotice
     };
     window.localStorage.setItem(appStorageKey, JSON.stringify(payload));
 }
@@ -554,11 +673,13 @@ function loadPrototypeState() {
         weightUnit = parsed.weightUnit ?? weightUnit;
         currentProgramWeek = parsed.currentProgramWeek ?? currentProgramWeek;
         lastWorkoutReview = parsed.lastWorkoutReview ?? lastWorkoutReview;
+        workflowNotice = parsed.workflowNotice ?? parsed.trainingState?.workflowNotice ?? workflowNotice;
     } catch (error) {
         trainingState = createTrainingState();
     }
 
     currentProgramWeek = Math.min(currentProgramWeek, blockWeeks.length - 1);
+    trainingState.workflowNotice = workflowNotice;
     loadWorkoutPlanForCurrentDay();
 }
 
@@ -908,6 +1029,8 @@ function renderProgressSummaries() {
     programBlockRecapCopy.textContent = blockHistory.length === 0
         ? "Block recap will summarize compliance, fatigue, and session quality as training logs come in."
         : `Logged ${blockHistory.length} day${blockHistory.length === 1 ? "" : "s"}. Last saved session: ${lastLog.weekLabel} ${lastLog.dayLabel}.`;
+
+    dailyWorkflowMessage.textContent = workflowNotice;
 }
 
 function renderProgramWeek() {
@@ -1094,6 +1217,7 @@ function refreshWorkspaceState() {
     loadWorkoutPlanForCurrentDay();
     currentProgramWeek = trainingState.currentWeekIndex;
     renderProfile();
+    renderMainLiftCues();
     renderWorkoutPlanner();
     renderProgramWeek();
     renderWorkoutFeedback();
@@ -1278,6 +1402,14 @@ dailyCheckinForm.addEventListener("submit", (event) => {
     const currentDay = getCurrentDayDefinition();
     const completionSummary = buildDayCompletionSummary(workoutPlan);
     const completionPercent = completionSummary.totalSets === 0 ? 0 : Math.round((completionSummary.doneSets / completionSummary.totalSets) * 100);
+    const saveConfirmed = window.confirm(buildWorkoutConfirmationMessage(currentDay, completionSummary));
+
+    if (!saveConfirmed) {
+        workflowNotice = `${currentDay.week.label} ${currentDay.day.label} is still open. Save it only when you are sure today's workout is done.`;
+        renderProgressSummaries();
+        savePrototypeState();
+        return;
+    }
 
     let summary = "";
     let status = "";
@@ -1354,11 +1486,15 @@ dailyCheckinForm.addEventListener("submit", (event) => {
         videosAttached: completionSummary.attachedVideos
     });
 
+    const weekWasCompleted = countCompletedDaysForWeek(currentDay.weekIndex) === blockWeeks[currentDay.weekIndex].days.length;
+
     lastWorkoutReview = { summary, cues, improvements, videoText };
     dailyStatus.textContent = status;
     updateWorkoutFeedbackPanel(summary, cues, improvements, videoText);
 
     advanceTrainingPointer();
+    workflowNotice = buildWorkflowNoticeAfterSave(currentDay, getCurrentTrainingPointer(), weekWasCompleted);
+    trainingState.workflowNotice = workflowNotice;
     document.getElementById("daily-notes").value = "";
     refreshWorkspaceState();
 });
@@ -1388,6 +1524,7 @@ signOutButton.addEventListener("click", () => {
 loadPrototypeState();
 setAuthMode("create");
 renderProfile();
+renderMainLiftCues();
 renderWorkoutPlanner();
 renderProgramWeek();
 renderWorkoutFeedback();

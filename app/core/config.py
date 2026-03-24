@@ -12,6 +12,16 @@ class Settings:
     password_salt: str
     database_path: Path
     database_url: str | None
+    llm_provider: str
+    llm_timeout_seconds: float
+    llm_max_output_tokens: int
+    ollama_base_url: str
+    ollama_model: str
+    ollama_api_key: str
+    gemini_api_key: str
+    gemini_model: str
+    groq_api_key: str
+    groq_model: str
 
 
 @lru_cache
@@ -25,6 +35,16 @@ def get_settings() -> Settings:
         password_salt=os.getenv("MYPOWERCOACH_PASSWORD_SALT", "myPowerCoach-dev-salt"),
         database_path=database_path,
         database_url=os.getenv("DATABASE_URL"),
+        llm_provider=os.getenv("MYPOWERCOACH_LLM_PROVIDER", "none").strip().lower(),
+        llm_timeout_seconds=float(os.getenv("MYPOWERCOACH_LLM_TIMEOUT_SECONDS", "20")),
+        llm_max_output_tokens=int(os.getenv("MYPOWERCOACH_LLM_MAX_OUTPUT_TOKENS", "220")),
+        ollama_base_url=os.getenv("MYPOWERCOACH_OLLAMA_BASE_URL", "http://localhost:11434/api").strip(),
+        ollama_model=os.getenv("MYPOWERCOACH_OLLAMA_MODEL", "gemma3").strip(),
+        ollama_api_key=(os.getenv("MYPOWERCOACH_OLLAMA_API_KEY") or os.getenv("OLLAMA_API_KEY") or "").strip(),
+        gemini_api_key=(os.getenv("MYPOWERCOACH_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip(),
+        gemini_model=os.getenv("MYPOWERCOACH_GEMINI_MODEL", "gemini-2.5-flash").strip(),
+        groq_api_key=(os.getenv("MYPOWERCOACH_GROQ_API_KEY") or os.getenv("GROQ_API_KEY") or "").strip(),
+        groq_model=os.getenv("MYPOWERCOACH_GROQ_MODEL", "llama-3.1-8b-instant").strip(),
     )
 
 

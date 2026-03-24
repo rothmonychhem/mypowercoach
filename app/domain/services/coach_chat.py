@@ -6,6 +6,9 @@ from app.domain.models.program import ProgramOverview
 
 
 class CoachChatService:
+    def __init__(self, llm_chat_client: object | None = None) -> None:
+        self._llm_chat_client = llm_chat_client
+
     def reply(self, athlete: AthleteProfile, program: ProgramOverview, message: str) -> ChatReply:
         text = self._normalize(message)
 
@@ -29,6 +32,10 @@ class CoachChatService:
             answer = self._progress_answer(athlete, program)
         else:
             answer = self._general_answer(athlete, program)
+
+        llm_answer = self._llm_answer(athlete=athlete, program=program, message=message, fallback_answer=answer)
+        if llm_answer:
+            answer = llm_answer
 
         return ChatReply(
             answer=answer,
@@ -129,6 +136,69 @@ class CoachChatService:
         return (
             f"This athlete is on a {program.split} built as a {program.block_type.replace('_', ' ')} block with a focus on {program.block_focus.lower()}. "
             "The useful coaching job is to explain what the block is trying to improve, why the week is organized that way, and what to focus on next without treating the whole plan like a black box."
+        )
+
+    def _llm_answer(
+        self,
+        athlete: AthleteProfile,
+        program: ProgramOverview,
+        message: str,
+        fallback_answer: str,
+    ) -> str | None:
+        if self._llm_chat_client is None:
+            return None
+
+        generate = getattr(self._llm_chat_client, "generate", None)
+        if not callable(generate):
+            return None
+
+        system_prompt = self._build_system_prompt()
+        user_prompt = self._build_user_prompt(athlete, program, message, fallback_answer)
+        response = generate(system_prompt, user_prompt)
+        if not isinstance(response, str):
+            return None
+        cleaned = response.strip()
+        return cleaned or None
+
+    @staticmethod
+    def _build_system_prompt() -> str:
+        return (
+            "You are myPowerCoach, a powerlifting coach chatbot. "
+            "Answer like a good coach: specific, practical, and grounded in the athlete context provided. "
+            "Do not invent data that is not in the context. "
+            "Keep the answer under 140 words, avoid generic motivational filler, and explain the training logic clearly. "
+            "If the athlete asks about today's work, focus on the current block and first upcoming session. "
+            "If the context is incomplete, say what is known and give the most reasonable coaching answer from that context."
+        )
+
+    def _build_user_prompt(
+        self,
+        athlete: AthleteProfile,
+        program: ProgramOverview,
+        message: str,
+        fallback_answer: str,
+    ) -> str:
+        first_week = program.weeks[0]
+        first_day = first_week.days[0]
+        day_summary = ", ".join(
+            f"{exercise.name} {exercise.sets}x{exercise.reps} @ RPE {exercise.target_rpe}"
+            for exercise in first_day.exercises[:4]
+        )
+        limiter_summary = ", ".join(program.target_limiters[:3]) if program.target_limiters else "general strength accumulation"
+        progression_notes = " ".join(program.progression_notes[:3])
+
+        return (
+            f"Athlete: {athlete.name}, {athlete.age} years old, {athlete.bodyweight_kg} kg, "
+            f"{athlete.training_days_per_week} training days per week, goal: {athlete.primary_goal}, equipment: {athlete.equipment}.\n"
+            f"PRs: squat {athlete.lift_numbers.squat_kg} kg, bench {athlete.lift_numbers.bench_kg} kg, deadlift {athlete.lift_numbers.deadlift_kg} kg.\n"
+            f"Notes/constraints: {athlete.notes or 'none'}. Extra constraints: {', '.join(athlete.constraints) if athlete.constraints else 'none'}.\n"
+            f"Program: {program.block_type.replace('_', ' ')} block, focus {program.block_focus}, target limiters {limiter_summary}.\n"
+            f"Current week flow: {', '.join(week.label for week in program.weeks)}.\n"
+            f"First upcoming session: {first_week.label} {first_day.day_label}, focus {first_day.focus}. Exercises: {day_summary}.\n"
+            f"Programming notes: {progression_notes}\n"
+            f"Rule-based coaching baseline answer: {fallback_answer}\n"
+            f"User question: {message}\n"
+            "Write the final answer for the athlete."
         )
 
     @staticmethod

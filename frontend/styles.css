@@ -541,6 +541,25 @@ button {
     margin-bottom: 18px;
 }
 
+.workflow-notice {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border: 1px solid rgba(99, 210, 154, 0.16);
+    border-radius: var(--radius-md);
+    background: rgba(99, 210, 154, 0.08);
+    color: var(--ink);
+    line-height: 1.55;
+}
+
+.main-lift-cues-card {
+    margin-bottom: 18px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(143, 152, 163, 0.08));
+}
+
+.main-lift-cues-card h4 {
+    margin-bottom: 10px;
+}
+
 .planned-row,
 .exercise-log-header {
     display: flex;
