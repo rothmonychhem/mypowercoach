@@ -70,13 +70,14 @@ class SQLiteAthleteRepository:
                     training_days_per_week,
                     primary_goal,
                     equipment,
+                    preferred_block_type,
                     squat_kg,
                     bench_kg,
                     deadlift_kg,
                     notes,
                     constraints_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(account_id) DO UPDATE SET
                     name = excluded.name,
                     height_cm = excluded.height_cm,
@@ -87,6 +88,7 @@ class SQLiteAthleteRepository:
                     training_days_per_week = excluded.training_days_per_week,
                     primary_goal = excluded.primary_goal,
                     equipment = excluded.equipment,
+                    preferred_block_type = excluded.preferred_block_type,
                     squat_kg = excluded.squat_kg,
                     bench_kg = excluded.bench_kg,
                     deadlift_kg = excluded.deadlift_kg,
@@ -104,6 +106,7 @@ class SQLiteAthleteRepository:
                     athlete.training_days_per_week,
                     athlete.primary_goal,
                     athlete.equipment,
+                    athlete.preferred_block_type,
                     athlete.lift_numbers.squat_kg,
                     athlete.lift_numbers.bench_kg,
                     athlete.lift_numbers.deadlift_kg,
@@ -127,6 +130,7 @@ class SQLiteAthleteRepository:
                     training_days_per_week,
                     primary_goal,
                     equipment,
+                    preferred_block_type,
                     squat_kg,
                     bench_kg,
                     deadlift_kg,
@@ -150,6 +154,7 @@ class SQLiteAthleteRepository:
             training_days_per_week=row["training_days_per_week"],
             primary_goal=row["primary_goal"],
             equipment=row["equipment"],
+            preferred_block_type=row["preferred_block_type"],
             lift_numbers=LiftNumbers(
                 squat_kg=row["squat_kg"],
                 bench_kg=row["bench_kg"],

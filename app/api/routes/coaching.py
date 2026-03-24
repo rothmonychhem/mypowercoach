@@ -9,10 +9,14 @@ from app.api.schemas.coaching import (
 from app.api.schemas.video_analysis import (
     BenchVideoAnalysisRequest,
     BenchVideoAnalysisResponse,
+    BenchVideoPathAnalysisRequest,
     DeadliftVideoAnalysisRequest,
     DeadliftVideoAnalysisResponse,
+    DeadliftVideoPathAnalysisRequest,
     SquatVideoAnalysisRequest,
     SquatVideoAnalysisResponse,
+    SquatVideoPathAnalysisRequest,
+    VideoPathAnalysisResponse,
 )
 from app.application.use_cases.coaching import CoachingService
 from app.dependencies import get_coaching_service
@@ -90,6 +94,21 @@ def analyze_bench_video(
     return BenchVideoAnalysisResponse(**data)
 
 
+@router.post("/bench-video-from-path", response_model=VideoPathAnalysisResponse)
+def analyze_bench_video_from_path(
+    request: BenchVideoPathAnalysisRequest,
+    service: CoachingService = Depends(get_coaching_service),
+) -> VideoPathAnalysisResponse:
+    payload = request.model_dump()
+    try:
+        result = service.analyze_bench_video_path(**payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    return VideoPathAnalysisResponse(**result)
+
+
 @router.post("/squat-video-analysis", response_model=SquatVideoAnalysisResponse)
 def analyze_squat_video(
     request: SquatVideoAnalysisRequest,
@@ -106,6 +125,21 @@ def analyze_squat_video(
     return SquatVideoAnalysisResponse(**data)
 
 
+@router.post("/squat-video-from-path", response_model=VideoPathAnalysisResponse)
+def analyze_squat_video_from_path(
+    request: SquatVideoPathAnalysisRequest,
+    service: CoachingService = Depends(get_coaching_service),
+) -> VideoPathAnalysisResponse:
+    payload = request.model_dump()
+    try:
+        result = service.analyze_squat_video_path(**payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    return VideoPathAnalysisResponse(**result)
+
+
 @router.post("/deadlift-video-analysis", response_model=DeadliftVideoAnalysisResponse)
 def analyze_deadlift_video(
     request: DeadliftVideoAnalysisRequest,
@@ -120,3 +154,18 @@ def analyze_deadlift_video(
 
     data = service.deadlift_video_analysis_to_dict(analysis)
     return DeadliftVideoAnalysisResponse(**data)
+
+
+@router.post("/deadlift-video-from-path", response_model=VideoPathAnalysisResponse)
+def analyze_deadlift_video_from_path(
+    request: DeadliftVideoPathAnalysisRequest,
+    service: CoachingService = Depends(get_coaching_service),
+) -> VideoPathAnalysisResponse:
+    payload = request.model_dump()
+    try:
+        result = service.analyze_deadlift_video_path(**payload)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+    return VideoPathAnalysisResponse(**result)

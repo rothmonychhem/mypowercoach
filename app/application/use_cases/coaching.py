@@ -19,6 +19,7 @@ from app.domain.services.deadlift_video_analyzer import DeadliftVideoAnalyzer
 from app.domain.services.feedback_composer import FeedbackComposer
 from app.domain.services.program_generator import ProgramGenerator
 from app.domain.services.squat_video_analyzer import SquatVideoAnalyzer
+from app.infrastructure.video.pipeline import MediaPipeVideoAnalysisPipeline
 
 
 class CoachingService:
@@ -32,6 +33,7 @@ class CoachingService:
         bench_video_analyzer: BenchVideoAnalyzer,
         squat_video_analyzer: SquatVideoAnalyzer,
         deadlift_video_analyzer: DeadliftVideoAnalyzer,
+        video_analysis_pipeline: MediaPipeVideoAnalysisPipeline,
     ) -> None:
         self._athlete_repository = athlete_repository
         self._feedback_composer = feedback_composer
@@ -41,6 +43,7 @@ class CoachingService:
         self._bench_video_analyzer = bench_video_analyzer
         self._squat_video_analyzer = squat_video_analyzer
         self._deadlift_video_analyzer = deadlift_video_analyzer
+        self._video_analysis_pipeline = video_analysis_pipeline
 
     def generate_daily_feedback(
         self,
@@ -62,7 +65,9 @@ class CoachingService:
 
     def chat(self, account_id: str, message: str) -> ChatReply:
         athlete = self._require_athlete(account_id)
-        return self._coach_chat_service.reply(athlete=athlete, message=message)
+        athlete_level, focus_points = self._athlete_profiler.profile_summary(athlete)
+        program = self._program_generator.generate(athlete, athlete_level, focus_points)
+        return self._coach_chat_service.reply(athlete=athlete, program=program, message=message)
 
     def get_program(self, account_id: str) -> ProgramOverview:
         athlete = self._require_athlete(account_id)
@@ -162,6 +167,103 @@ class CoachingService:
             submission=submission,
             signals=signal_profile,
         )
+
+    def analyze_bench_video_path(
+        self,
+        account_id: str,
+        video_path: str,
+        video_name: str,
+        camera_angle: str,
+        lift_kg: float,
+        reps: int,
+        completed_rpe: float,
+        grip_width_style: str,
+    ) -> dict:
+        self._require_athlete(account_id)
+        extraction = self._video_analysis_pipeline.extract_bench(video_path)
+        analysis = self._bench_video_analyzer.analyze(
+            submission=VideoSubmission(
+                account_id=account_id,
+                lift_type="bench_press",
+                video_name=video_name,
+                camera_angle=camera_angle,
+                fps=30,
+                lift_kg=lift_kg,
+                reps=reps,
+                completed_rpe=completed_rpe,
+                grip_width_style=grip_width_style,
+            ),
+            signals=extraction.derived_signals,
+        )
+        return {
+            "analysis": self.bench_video_analysis_to_dict(analysis),
+            **self._video_analysis_pipeline.bench_result_to_dict(extraction),
+        }
+
+    def analyze_squat_video_path(
+        self,
+        account_id: str,
+        video_path: str,
+        video_name: str,
+        camera_angle: str,
+        lift_kg: float,
+        reps: int,
+        completed_rpe: float,
+        stance_style: str,
+    ) -> dict:
+        self._require_athlete(account_id)
+        extraction = self._video_analysis_pipeline.extract_squat(video_path)
+        analysis = self._squat_video_analyzer.analyze(
+            submission=VideoSubmission(
+                account_id=account_id,
+                lift_type="squat",
+                video_name=video_name,
+                camera_angle=camera_angle,
+                fps=30,
+                lift_kg=lift_kg,
+                reps=reps,
+                completed_rpe=completed_rpe,
+                grip_width_style=stance_style,
+            ),
+            signals=extraction.derived_signals,
+        )
+        return {
+            "analysis": self.squat_video_analysis_to_dict(analysis),
+            **self._video_analysis_pipeline.squat_result_to_dict(extraction),
+        }
+
+    def analyze_deadlift_video_path(
+        self,
+        account_id: str,
+        video_path: str,
+        video_name: str,
+        camera_angle: str,
+        lift_kg: float,
+        reps: int,
+        completed_rpe: float,
+        deadlift_style: str,
+    ) -> dict:
+        self._require_athlete(account_id)
+        extraction = self._video_analysis_pipeline.extract_deadlift(video_path)
+        analysis = self._deadlift_video_analyzer.analyze(
+            submission=VideoSubmission(
+                account_id=account_id,
+                lift_type="deadlift",
+                video_name=video_name,
+                camera_angle=camera_angle,
+                fps=30,
+                lift_kg=lift_kg,
+                reps=reps,
+                completed_rpe=completed_rpe,
+                grip_width_style="",
+                style_variant=deadlift_style,
+            ),
+            signals=extraction.derived_signals,
+        )
+        return {
+            "analysis": self.deadlift_video_analysis_to_dict(analysis),
+            **self._video_analysis_pipeline.deadlift_result_to_dict(extraction),
+        }
 
     def _require_athlete(self, account_id: str):
         athlete = self._athlete_repository.get_by_account_id(account_id)

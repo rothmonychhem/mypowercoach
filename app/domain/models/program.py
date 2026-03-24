@@ -8,6 +8,9 @@ class ProgramExercisePrescription:
     sets: int
     reps: int
     target_rpe: float
+    prescribed_weight_kg: float | None = None
+    reference_lift: str | None = None
+    percent_of_reference: float | None = None
     notes: str = ""
 
 
@@ -33,6 +36,9 @@ class ProgramOverview:
     style: str
     summary: str
     split: str
+    block_type: str
+    block_focus: str
     focus_points: list[str]
+    target_limiters: list[str]
     progression_notes: list[str]
     weeks: list[ProgramWeek] = field(default_factory=list)

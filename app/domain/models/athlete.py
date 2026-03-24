@@ -21,5 +21,6 @@ class AthleteProfile:
     primary_goal: str
     equipment: str
     lift_numbers: LiftNumbers
+    preferred_block_type: str = ""
     notes: str = ""
     constraints: list[str] = field(default_factory=list)

@@ -283,8 +283,27 @@
                             <div>
                                 <p class="eyebrow">Daily Feedback</p>
                                 <h3>Today's workout</h3>
+                                <p class="panel-subcopy" id="daily-workout-context">Week 1, Day 1 is published for today.</p>
                             </div>
                             <span class="status-tag" id="daily-status">Ready to log</span>
+                        </div>
+
+                        <div class="daily-progress-strip" id="daily-progress-strip">
+                            <article class="panel-card compact-card">
+                                <p class="card-label">Published workout</p>
+                                <h4 id="published-workout-title">Week 1 · Day 1</h4>
+                                <p id="published-workout-copy">The next planned session should appear here and move forward when today's work is saved.</p>
+                            </article>
+                            <article class="panel-card compact-card">
+                                <p class="card-label">Week progress</p>
+                                <h4 id="week-progress-title">0 of 4 days done</h4>
+                                <p id="week-progress-copy">No days are complete yet in the selected week.</p>
+                            </article>
+                            <article class="panel-card compact-card">
+                                <p class="card-label">Block progress</p>
+                                <h4 id="block-progress-title">0 of 16 days done</h4>
+                                <p id="block-progress-copy">The program table should highlight where you are in the block.</p>
+                            </article>
                         </div>
 
                         <div class="exercise-slider-shell">
@@ -363,6 +382,24 @@
                             <div class="block-week-grid" id="block-week-grid"></div>
                         </div>
 
+                        <div class="program-progress-grid">
+                            <article class="panel-card compact-card">
+                                <p class="card-label">Current block position</p>
+                                <h4 id="program-current-marker">Week 1 · Day 1</h4>
+                                <p id="program-current-copy">The sheet should keep the current training position obvious.</p>
+                            </article>
+                            <article class="panel-card compact-card">
+                                <p class="card-label">Weekly recap</p>
+                                <h4 id="program-weekly-recap-title">Week not finished yet</h4>
+                                <p id="program-weekly-recap-copy">Daily reviews should roll up into a simple weekly recap.</p>
+                            </article>
+                            <article class="panel-card compact-card">
+                                <p class="card-label">Block recap</p>
+                                <h4 id="program-block-recap-title">Block in progress</h4>
+                                <p id="program-block-recap-copy">Block recap should summarize compliance, fatigue, and where performance moved.</p>
+                            </article>
+                        </div>
+
                         <div class="program-sheet-wrap">
                             <table class="program-sheet">
                                 <thead id="program-sheet-head"></thead>
@@ -424,6 +461,8 @@
                                     You can ask things like "How is my bench progressing?", "Why did next week change?", or "What should I focus on in squat today?"
                                 </article>
                             </div>
+
+                            <div class="chat-suggestions" id="chat-suggestions"></div>
 
                             <form class="chat-form" id="chat-form">
                                 <input type="text" id="chat-input" placeholder="Ask the coach how your training is going...">

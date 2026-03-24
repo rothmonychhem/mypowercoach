@@ -13,9 +13,17 @@ const workspacePanels = document.querySelectorAll(".workspace-panel");
 const profileForm = document.getElementById("profile-form");
 const dailyCheckinForm = document.getElementById("daily-checkin-form");
 const dailyStatus = document.getElementById("daily-status");
+const dailyWorkoutContext = document.getElementById("daily-workout-context");
+const publishedWorkoutTitle = document.getElementById("published-workout-title");
+const publishedWorkoutCopy = document.getElementById("published-workout-copy");
+const weekProgressTitle = document.getElementById("week-progress-title");
+const weekProgressCopy = document.getElementById("week-progress-copy");
+const blockProgressTitle = document.getElementById("block-progress-title");
+const blockProgressCopy = document.getElementById("block-progress-copy");
 const chatForm = document.getElementById("chat-form");
 const chatThread = document.getElementById("chat-thread");
 const chatInput = document.getElementById("chat-input");
+const chatSuggestions = document.getElementById("chat-suggestions");
 const signOutButton = document.querySelector("[data-signout]");
 const weightUnitToggle = document.getElementById("weight-unit-toggle");
 const weightUnitButtons = document.querySelectorAll("[data-weight-unit]");
@@ -39,15 +47,25 @@ const selectedWeekTitle = document.getElementById("selected-week-title");
 const selectedWeekDescription = document.getElementById("selected-week-description");
 const programSheetHead = document.getElementById("program-sheet-head");
 const programSheetBody = document.getElementById("program-sheet-body");
+const programCurrentMarker = document.getElementById("program-current-marker");
+const programCurrentCopy = document.getElementById("program-current-copy");
+const programWeeklyRecapTitle = document.getElementById("program-weekly-recap-title");
+const programWeeklyRecapCopy = document.getElementById("program-weekly-recap-copy");
+const programBlockRecapTitle = document.getElementById("program-block-recap-title");
+const programBlockRecapCopy = document.getElementById("program-block-recap-copy");
 const newBlockStatus = document.getElementById("new-block-status");
 const newBlockGate = document.getElementById("new-block-gate");
 const newBlockForm = document.getElementById("new-block-form");
 const createBlockButton = document.getElementById("create-block-button");
 
+const KG_TO_LB = 2.20462;
+const appStorageKey = "mypowercoach-prototype-state";
+
 let authMode = "create";
 let selectedExerciseIndex = 0;
-let currentProgramWeek = 2;
+let currentProgramWeek = 0;
 let weightUnit = "kg";
+
 let athleteProfile = {
     name: "Maya Torres",
     heightCm: "168",
@@ -64,38 +82,7 @@ let athleteProfile = {
     constraints: "Deadlift fatigue can stack fast, weekdays are time-limited",
     notes: "Bench responds well to higher frequency. Squat needs more force out of the bottom."
 };
-let workoutPlan = [
-    {
-        name: "Competition bench",
-        summary: "Primary bench exposure for the day.",
-        sets: [
-            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 7.5, completedReps: 5, completedWeight: 82.5, completedRpe: 7.5, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 7.5, completedReps: 5, completedWeight: 82.5, completedRpe: 7.5, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 8, completedReps: 5, completedWeight: 82.5, completedRpe: 8, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 8, completedReps: 5, completedWeight: 82.5, completedRpe: 8, done: false, videoName: "" },
-            { plannedReps: 5, plannedWeight: 82.5, plannedRpe: 8.5, completedReps: 5, completedWeight: 82.5, completedRpe: 8.5, done: false, videoName: "" }
-        ]
-    },
-    {
-        name: "Close-grip bench",
-        summary: "Accessory press to build triceps and bench carryover.",
-        sets: [
-            { plannedReps: 6, plannedWeight: 72.5, plannedRpe: 7.5, completedReps: 6, completedWeight: 72.5, completedRpe: 7.5, done: false, videoName: "" },
-            { plannedReps: 6, plannedWeight: 72.5, plannedRpe: 8, completedReps: 6, completedWeight: 72.5, completedRpe: 8, done: false, videoName: "" },
-            { plannedReps: 6, plannedWeight: 72.5, plannedRpe: 8, completedReps: 6, completedWeight: 72.5, completedRpe: 8, done: false, videoName: "" }
-        ]
-    },
-    {
-        name: "Chest-supported row",
-        summary: "Upper-back support without extra low-back fatigue.",
-        sets: [
-            { plannedReps: 10, plannedWeight: 55, plannedRpe: 7, completedReps: 10, completedWeight: 55, completedRpe: 7, done: false, videoName: "" },
-            { plannedReps: 10, plannedWeight: 55, plannedRpe: 7.5, completedReps: 10, completedWeight: 55, completedRpe: 7.5, done: false, videoName: "" },
-            { plannedReps: 10, plannedWeight: 55, plannedRpe: 8, completedReps: 10, completedWeight: 55, completedRpe: 8, done: false, videoName: "" },
-            { plannedReps: 10, plannedWeight: 55, plannedRpe: 8, completedReps: 10, completedWeight: 55, completedRpe: 8, done: false, videoName: "" }
-        ]
-    }
-];
+
 const blockWeeks = [
     {
         label: "Week 1",
@@ -298,7 +285,282 @@ const blockWeeks = [
         ]
     }
 ];
-const KG_TO_LB = 2.20462;
+
+const workoutTemplateByDay = buildWorkoutTemplates(blockWeeks);
+let trainingState = createTrainingState();
+let workoutPlan = [];
+let lastWorkoutReview = {
+    summary: "Complete a workout day and the review will summarize how the session compared to the plan.",
+    cues: [
+        "Use the planned session as the baseline before changing load emotionally.",
+        "Attach a set video when you want the review tied to one specific rep or position."
+    ],
+    improvements: [
+        "Daily reviews should feed the weekly and block recap automatically.",
+        "The next workout should publish only after the current day is saved."
+    ],
+    videoText: "No completed workout review yet."
+};
+
+function buildWorkoutTemplates(weeks) {
+    const templates = {};
+
+    weeks.forEach((week, weekIndex) => {
+        week.days.forEach((day, dayIndex) => {
+            templates[getDayKey(weekIndex, dayIndex)] = day.exercises.map((exercise) =>
+                createExerciseTemplate(exercise.name, exercise.prescription, week.title, day.title)
+            );
+        });
+    });
+
+    return templates;
+}
+
+function createExerciseTemplate(name, prescription, weekTitle, dayTitle) {
+    const parsed = parsePrescription(prescription);
+    return {
+        name,
+        summary: `${dayTitle} in ${weekTitle}. ${prescription}`,
+        prescription,
+        sets: Array.from({ length: parsed.sets }, (_, index) => {
+            const targetRpe = parsed.rpeStart + (index >= Math.max(parsed.sets - 2, 0) ? 0.5 : 0);
+            return {
+                plannedReps: parsed.reps,
+                plannedWeight: parsed.weightKg,
+                plannedRpe: targetRpe,
+                completedReps: parsed.reps,
+                completedWeight: parsed.weightKg,
+                completedRpe: targetRpe,
+                done: false,
+                videoName: ""
+            };
+        })
+    };
+}
+
+function parsePrescription(prescription) {
+    const normalized = prescription.toLowerCase();
+    const setMatch = normalized.match(/(\d+)\s*x\s*(\d+)/);
+    const percentMatch = normalized.match(/(\d+(?:\.\d+)?)\s*%/);
+    const sets = setMatch ? Number(setMatch[1]) : 3;
+    const reps = setMatch ? Number(setMatch[2]) : 8;
+
+    if (percentMatch) {
+        const percent = Number(percentMatch[1]);
+        return {
+            sets,
+            reps,
+            weightKg: percent,
+            rpeStart: percentToRpe(percent)
+        };
+    }
+
+    if (normalized.includes("light")) {
+        return { sets, reps, weightKg: 40, rpeStart: 6 };
+    }
+    if (normalized.includes("moderate")) {
+        return { sets, reps, weightKg: 55, rpeStart: 7 };
+    }
+    if (normalized.includes("hard")) {
+        return { sets, reps, weightKg: 60, rpeStart: 8 };
+    }
+
+    return { sets, reps, weightKg: 50, rpeStart: 7 };
+}
+
+function percentToRpe(percent) {
+    if (percent >= 82.5) {
+        return 8.5;
+    }
+    if (percent >= 75) {
+        return 8;
+    }
+    if (percent >= 70) {
+        return 7.5;
+    }
+    if (percent >= 65) {
+        return 7;
+    }
+    return 6.5;
+}
+
+function createTrainingState() {
+    return {
+        currentWeekIndex: 0,
+        currentDayIndex: 0,
+        completedDays: {},
+        workoutHistory: []
+    };
+}
+
+function getDayKey(weekIndex, dayIndex) {
+    return `w${weekIndex}-d${dayIndex}`;
+}
+
+function getCurrentTrainingPointer() {
+    return {
+        weekIndex: trainingState.currentWeekIndex,
+        dayIndex: trainingState.currentDayIndex,
+        dayKey: getDayKey(trainingState.currentWeekIndex, trainingState.currentDayIndex)
+    };
+}
+
+function cloneWorkoutTemplate(dayKey) {
+    const template = workoutTemplateByDay[dayKey] ?? [];
+    return JSON.parse(JSON.stringify(template));
+}
+
+function isBlockComplete() {
+    const lastWeekIndex = blockWeeks.length - 1;
+    const lastDayIndex = blockWeeks[lastWeekIndex].days.length - 1;
+    return Boolean(trainingState.completedDays[getDayKey(lastWeekIndex, lastDayIndex)]);
+}
+
+function getCurrentDayDefinition() {
+    const pointer = getCurrentTrainingPointer();
+    const week = blockWeeks[pointer.weekIndex];
+    const day = week.days[pointer.dayIndex];
+    return {
+        week,
+        day,
+        weekIndex: pointer.weekIndex,
+        dayIndex: pointer.dayIndex,
+        dayKey: pointer.dayKey
+    };
+}
+
+function getDayStatus(weekIndex, dayIndex) {
+    const dayKey = getDayKey(weekIndex, dayIndex);
+    if (trainingState.completedDays[dayKey]) {
+        return "done";
+    }
+
+    if (isBlockComplete()) {
+        return "upcoming";
+    }
+
+    const pointer = getCurrentTrainingPointer();
+    if (pointer.weekIndex === weekIndex && pointer.dayIndex === dayIndex) {
+        return "current";
+    }
+    if (weekIndex < pointer.weekIndex || (weekIndex === pointer.weekIndex && dayIndex < pointer.dayIndex)) {
+        return "passed";
+    }
+    return "upcoming";
+}
+
+function countCompletedDaysForWeek(weekIndex) {
+    return blockWeeks[weekIndex].days.filter((_, dayIndex) => getDayStatus(weekIndex, dayIndex) === "done").length;
+}
+
+function countCompletedDaysForBlock() {
+    return Object.keys(trainingState.completedDays).length;
+}
+
+function getTotalDaysInBlock() {
+    return blockWeeks.reduce((sum, week) => sum + week.days.length, 0);
+}
+
+function getWeekHistory(weekIndex) {
+    return trainingState.workoutHistory.filter((entry) => entry.weekIndex === weekIndex);
+}
+
+function getBlockHistory() {
+    return trainingState.workoutHistory;
+}
+
+function averageFromHistory(entries, field) {
+    if (!entries.length) {
+        return 0;
+    }
+    return entries.reduce((sum, entry) => sum + (entry[field] ?? 0), 0) / entries.length;
+}
+
+function loadWorkoutPlanForCurrentDay() {
+    const pointer = getCurrentTrainingPointer();
+    const saved = trainingState.completedDays[pointer.dayKey];
+    workoutPlan = saved?.exercises ? JSON.parse(JSON.stringify(saved.exercises)) : cloneWorkoutTemplate(pointer.dayKey);
+    selectedExerciseIndex = Math.min(selectedExerciseIndex, Math.max(workoutPlan.length - 1, 0));
+}
+
+function qualityToScore(value) {
+    if (value === "great") {
+        return 3;
+    }
+    if (value === "solid") {
+        return 2;
+    }
+    return 1;
+}
+
+function fatigueToScore(value) {
+    if (value === "low") {
+        return 1;
+    }
+    if (value === "moderate") {
+        return 2;
+    }
+    return 3;
+}
+
+function buildDayCompletionSummary(exercises) {
+    const totalSets = exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
+    const doneSets = exercises.reduce((sum, exercise) => sum + exercise.sets.filter((set) => set.done).length, 0);
+    const attachedVideos = exercises.reduce((sum, exercise) => sum + exercise.sets.filter((set) => set.videoName).length, 0);
+    return { totalSets, doneSets, attachedVideos };
+}
+
+function advanceTrainingPointer() {
+    if (isBlockComplete()) {
+        return;
+    }
+
+    const pointer = getCurrentTrainingPointer();
+    const week = blockWeeks[pointer.weekIndex];
+
+    if (pointer.dayIndex < week.days.length - 1) {
+        trainingState.currentDayIndex += 1;
+        return;
+    }
+
+    if (pointer.weekIndex < blockWeeks.length - 1) {
+        trainingState.currentWeekIndex += 1;
+        trainingState.currentDayIndex = 0;
+    }
+}
+
+function savePrototypeState() {
+    const payload = {
+        athleteProfile,
+        trainingState,
+        weightUnit,
+        currentProgramWeek,
+        lastWorkoutReview
+    };
+    window.localStorage.setItem(appStorageKey, JSON.stringify(payload));
+}
+
+function loadPrototypeState() {
+    const raw = window.localStorage.getItem(appStorageKey);
+    if (!raw) {
+        loadWorkoutPlanForCurrentDay();
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+        athleteProfile = parsed.athleteProfile ?? athleteProfile;
+        trainingState = parsed.trainingState ?? trainingState;
+        weightUnit = parsed.weightUnit ?? weightUnit;
+        currentProgramWeek = parsed.currentProgramWeek ?? currentProgramWeek;
+        lastWorkoutReview = parsed.lastWorkoutReview ?? lastWorkoutReview;
+    } catch (error) {
+        trainingState = createTrainingState();
+    }
+
+    currentProgramWeek = Math.min(currentProgramWeek, blockWeeks.length - 1);
+    loadWorkoutPlanForCurrentDay();
+}
 
 function convertWeightForDisplay(weightKg) {
     const numericWeight = Number(weightKg);
@@ -360,6 +622,9 @@ function openWorkspace(name) {
         athleteProfile.name = name;
     }
     renderProfile();
+    renderWorkoutPlanner();
+    renderProgramWeek();
+    renderWorkoutFeedback();
     showView("app-view");
 }
 
@@ -374,28 +639,6 @@ function setActivePanel(panelId) {
     });
 }
 
-function getCoachReply(message) {
-    const text = message.toLowerCase();
-
-    if (text.includes("bench")) {
-        return "Your bench is responding well right now. Volume is paying off, recovery looks good, and the next useful move is more exposure before a bigger jump in intensity.";
-    }
-
-    if (text.includes("squat")) {
-        return "Your squat feedback points more toward force production out of the bottom than a major technical breakdown. That is why the plan keeps paused squat work in the rotation.";
-    }
-
-    if (text.includes("deadlift") || text.includes("pull")) {
-        return "Deadlift is the lift most likely to drag down readiness at the moment. The coaching logic would keep a meaningful heavy exposure while trimming the fatigue that is not paying rent.";
-    }
-
-    if (text.includes("tired") || text.includes("fatigue") || text.includes("recovery")) {
-        return "If fatigue is stacking faster than performance is improving, the app should protect momentum by reducing the stress that is least useful first, not by panicking and changing everything.";
-    }
-
-    return "Training is going best when the app can connect three things clearly: how the day felt, what your program is doing, and why the next adjustment makes sense for you.";
-}
-
 function appendChatMessage(role, text) {
     const bubble = document.createElement("article");
     bubble.className = `chat-bubble ${role}`;
@@ -404,49 +647,180 @@ function appendChatMessage(role, text) {
     chatThread.scrollTop = chatThread.scrollHeight;
 }
 
-function getWorkoutEntries() {
-    return workoutPlan.map((exercise) => ({
-        name: exercise.name,
-        plannedSets: exercise.sets.length,
-        plannedReps: exercise.sets[0]?.plannedReps ?? 0,
-        plannedWeight: exercise.sets[0]?.plannedWeight ?? 0,
-        plannedRpe: exercise.sets[0]?.plannedRpe ?? 0,
-        completedSets: exercise.sets.filter((set) => set.done).length,
-        completedReps: exercise.sets.reduce((sum, set) => sum + set.completedReps, 0),
-        completedWeight:
-            exercise.sets.reduce((sum, set) => sum + set.completedWeight, 0) / Math.max(exercise.sets.length, 1),
-        completedRpe: exercise.sets.reduce((sum, set) => sum + set.completedRpe, 0) / Math.max(exercise.sets.length, 1),
-        sets: exercise.sets.map((set, index) => ({
-            setNumber: index + 1,
-            plannedReps: set.plannedReps,
-            plannedWeight: set.plannedWeight,
-            plannedRpe: set.plannedRpe,
-            completedReps: set.completedReps,
-            completedWeight: set.completedWeight,
-            completedRpe: set.completedRpe,
-            done: set.done,
-            videoName: set.videoName
-        }))
-    }));
+function getLatestHistoryEntry() {
+    return trainingState.workoutHistory.at(-1) ?? null;
 }
 
-function buildExerciseSummary(exercises) {
-    return exercises
-        .map((exercise) => {
-            const changedSets = exercise.sets.filter(
-                (set) =>
-                    set.completedWeight !== set.plannedWeight ||
-                    set.completedReps !== set.plannedReps ||
-                    set.completedRpe !== set.plannedRpe
-            ).length;
-            const feedback =
-                changedSets === 0
-                    ? "all sets matched the plan."
-                    : `${changedSets} set${changedSets > 1 ? "s" : ""} changed from the plan.`;
+function normalizeChatText(message) {
+    return message.toLowerCase().replace(/\s+/g, " ").trim();
+}
 
-            return `<li><strong>${exercise.name}</strong> ${feedback}</li>`;
-        })
+function chatMatches(text, keywords) {
+    return keywords.some((keyword) => text.includes(keyword));
+}
+
+function inferPriorityLift() {
+    const notes = `${athleteProfile.primaryGoal} ${athleteProfile.notes} ${athleteProfile.constraints}`.toLowerCase();
+    const squat = Number(athleteProfile.squatKg);
+    const bench = Number(athleteProfile.benchKg);
+    const deadlift = Number(athleteProfile.deadliftKg);
+
+    if (chatMatches(notes, ["bench", "leg drive", "off chest", "pause"])) {
+        return "bench";
+    }
+    if (chatMatches(notes, ["squat", "out of the bottom", "out of the hole", "quad", "knee"])) {
+        return "squat";
+    }
+    if (chatMatches(notes, ["deadlift", "back fatigue", "hinge", "off the floor"])) {
+        return "deadlift";
+    }
+    if (squat > 0 && bench / squat < 0.58) {
+        return "bench";
+    }
+    if (deadlift > 0 && squat / deadlift < 0.78) {
+        return "squat";
+    }
+    return "deadlift";
+}
+
+function getPrimaryFocusCue() {
+    const priority = inferPriorityLift();
+    if (priority === "bench") {
+        return "Bench is the live priority, so the best carryover usually comes from repeated quality exposures, stable setup, and force transfer that stays clean before load jumps.";
+    }
+    if (priority === "squat") {
+        return "Squat is the live priority, so the useful question is whether the block is improving positions and force out of the bottom, not whether one top set felt hard.";
+    }
+    return "Deadlift is the live priority, so the coaching goal is to keep meaningful pulling exposures while managing the fatigue cost across the whole week.";
+}
+
+function summarizeCurrentWorkout() {
+    const currentDay = getCurrentDayDefinition();
+    const topExercises = workoutPlan.slice(0, 3).map((exercise) => exercise.name).join(", ");
+    return `${currentDay.week.label} ${currentDay.day.label} is ${currentDay.day.title.toLowerCase()}, and the main work today is ${topExercises}.`;
+}
+
+function summarizeWeekState() {
+    const currentDay = getCurrentDayDefinition();
+    const weekHistory = getWeekHistory(trainingState.currentWeekIndex);
+    const weekDone = countCompletedDaysForWeek(trainingState.currentWeekIndex);
+    const weekTotal = currentDay.week.days.length;
+
+    if (!weekHistory.length) {
+        return `${currentDay.week.label} is still empty, so the recap does not have enough data yet.`;
+    }
+
+    return `${currentDay.week.label} is ${weekDone}/${weekTotal} days complete with average session quality ${averageFromHistory(weekHistory, "sessionQualityScore").toFixed(1)}/3 and average fatigue ${averageFromHistory(weekHistory, "fatigueScore").toFixed(1)}/3.`;
+}
+
+function summarizeBlockState() {
+    const blockDone = countCompletedDaysForBlock();
+    const blockTotal = getTotalDaysInBlock();
+    if (blockDone === 0) {
+        return "The block has not started yet.";
+    }
+    return `The block is ${blockDone}/${blockTotal} days complete, so the next change should come from the trend of the block, not one emotional reaction.`;
+}
+
+function explainNextWorkout() {
+    const currentDay = getCurrentDayDefinition();
+    return `The next workout only changes when the current day is saved because the sheet, daily feedback, and recaps all share the same training state. That keeps ${currentDay.week.label} aligned with the actual block flow instead of letting the chat drift away from the program.`;
+}
+
+function buildSuggestedQuestions() {
+    const currentDay = getCurrentDayDefinition();
+    const priority = inferPriorityLift();
+    const liftQuestion = priority === "bench"
+        ? "How is my bench progressing?"
+        : priority === "squat"
+            ? "How is my squat progressing?"
+            : "How is my deadlift progressing?";
+
+    return [
+        `What should I focus on in ${currentDay.day.title.toLowerCase()}?`,
+        liftQuestion,
+        "Why did the next workout change?",
+        "What does the weekly recap say?"
+    ];
+}
+
+function renderChatSuggestions(questions = buildSuggestedQuestions()) {
+    chatSuggestions.innerHTML = questions
+        .map(
+            (question) => `
+                <button class="chat-suggestion" type="button" data-chat-question="${question}">
+                    ${question}
+                </button>
+            `
+        )
         .join("");
+}
+
+function buildCoachReply(message) {
+    const text = normalizeChatText(message);
+    const currentDay = getCurrentDayDefinition();
+    const latestHistory = getLatestHistoryEntry();
+    const weekHistory = getWeekHistory(trainingState.currentWeekIndex);
+    const weekCompletion = countCompletedDaysForWeek(trainingState.currentWeekIndex);
+    const weekTotal = currentDay.week.days.length;
+    const blockCompletion = countCompletedDaysForBlock();
+    const blockTotal = getTotalDaysInBlock();
+    let answer = "";
+
+    if (chatMatches(text, ["block", "next workout", "next day", "change", "why"])) {
+        answer = `${summarizeBlockState()} ${explainNextWorkout()}`;
+    } else if (chatMatches(text, ["today", "focus", currentDay.day.title.toLowerCase(), "session"])) {
+        answer = `${summarizeCurrentWorkout()} ${getPrimaryFocusCue()} The best coaching move today is to finish the planned work cleanly enough that the next published day still fits the block.`;
+    } else if (chatMatches(text, ["bench", "leg drive", "off chest", "pause"])) {
+        answer = `${getPrimaryFocusCue()} ${latestHistory ? `Your last saved day finished with ${latestHistory.completionPercent}% completion and session quality ${latestHistory.sessionQualityScore}/3, so bench decisions should come from repeated clean exposures, not one hard set.` : "Once a few days are logged, the weekly recap will tell us whether the bench work is actually carrying over."}`;
+    } else if (chatMatches(text, ["squat", "hole", "quad", "brace", "knee"])) {
+        answer = `Squat should be judged across the block, not in isolation. ${summarizeWeekState()} That recap should tell us whether the squat-focused work is improving bottom-end positions or only creating fatigue.`;
+    } else if (chatMatches(text, ["deadlift", "pull", "hinge", "back fatigue"])) {
+        answer = `Deadlift is usually the biggest weekly fatigue lever. ${summarizeWeekState()} If the recap starts showing high fatigue with dropping completion, the right move is to trim the least useful pulling stress first.`;
+    } else if (chatMatches(text, ["week", "recap"])) {
+        answer = `${summarizeWeekState()} The weekly recap should drive the next adjustment more than any one set.`;
+    } else if (chatMatches(text, ["fatigue", "tired", "recovery", "beat up"])) {
+        answer = latestHistory
+            ? `Your latest logged day carried fatigue ${latestHistory.fatigueScore}/3. If that keeps stacking in the weekly recap, the smart move is to reduce the fatigue that is paying the least rent instead of rewriting the whole block. ${summarizeWeekState()}`
+            : "Fatigue should be judged as a pattern across the week, not just a feeling from one workout. Once more days are logged, the chatbot can answer from the recap instead of guessing.";
+    } else if (chatMatches(text, ["weak", "weakness", "sticking point", "limiter"])) {
+        answer = `${getPrimaryFocusCue()} The block should attack the weak point with enough specific work to matter, but not so much that it destroys the rest of the week. That balance is what the recap is supposed to protect.`;
+    } else {
+        answer = `${summarizeCurrentWorkout()} ${summarizeWeekState()} ${getPrimaryFocusCue()} Ask about today's focus, your priority lift, fatigue, the weekly recap, or why the next workout changed and I can answer from the actual training state.`;
+    }
+
+    return {
+        answer,
+        suggestedQuestions: buildSuggestedQuestions()
+    };
+}
+
+function submitChatMessage(message) {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) {
+        return;
+    }
+
+    appendChatMessage("user", trimmedMessage);
+    const reply = buildCoachReply(trimmedMessage);
+    appendChatMessage("coach", reply.answer);
+    renderChatSuggestions(reply.suggestedQuestions);
+}
+
+function getWorkoutEntries() {
+    return workoutPlan.map((exercise) => ({
+        exercise_name: exercise.name,
+        sets: exercise.sets.map((set, index) => ({
+            set_number: index + 1,
+            planned_reps: set.plannedReps,
+            planned_weight_kg: set.plannedWeight,
+            completed_reps: set.completedReps,
+            completed_weight_kg: set.completedWeight,
+            completed_rpe: set.completedRpe,
+            done: set.done,
+            video_name: set.videoName
+        }))
+    }));
 }
 
 function updateWorkoutFeedbackPanel(summary, cues, improvements, videoText) {
@@ -479,6 +853,63 @@ function updateWorkoutFeedbackPanel(summary, cues, improvements, videoText) {
     `;
 }
 
+function renderWorkoutFeedback() {
+    updateWorkoutFeedbackPanel(
+        lastWorkoutReview.summary,
+        lastWorkoutReview.cues,
+        lastWorkoutReview.improvements,
+        lastWorkoutReview.videoText
+    );
+}
+
+function renderProgressSummaries() {
+    const pointer = getCurrentTrainingPointer();
+    const week = blockWeeks[pointer.weekIndex];
+    const day = week.days[pointer.dayIndex];
+    const weekDone = countCompletedDaysForWeek(pointer.weekIndex);
+    const weekTotal = week.days.length;
+    const blockDone = countCompletedDaysForBlock();
+    const blockTotal = getTotalDaysInBlock();
+    const weekHistory = getWeekHistory(pointer.weekIndex);
+    const blockHistory = getBlockHistory();
+    const lastLog = blockHistory.at(-1);
+
+    if (isBlockComplete()) {
+        dailyWorkoutContext.textContent = "The current block is complete. Review the recap and generate the next block.";
+        publishedWorkoutTitle.textContent = "Block complete";
+        publishedWorkoutCopy.textContent = "All planned days in the current block have been logged.";
+    } else {
+        dailyWorkoutContext.textContent = `${week.label}, ${day.label} is published for today.`;
+        publishedWorkoutTitle.textContent = `${week.label} / ${day.label}`;
+        publishedWorkoutCopy.textContent = `${day.title}: ${day.description}`;
+    }
+
+    weekProgressTitle.textContent = `${weekDone} of ${weekTotal} days done`;
+    weekProgressCopy.textContent = weekHistory.length === 0
+        ? "No days are complete yet in the current week."
+        : `Average completion ${Math.round(averageFromHistory(weekHistory, "completionPercent"))}% and fatigue ${averageFromHistory(weekHistory, "fatigueScore").toFixed(1)}/3 so far.`;
+
+    blockProgressTitle.textContent = `${blockDone} of ${blockTotal} days done`;
+    blockProgressCopy.textContent = blockDone === 0
+        ? "The block has not started yet."
+        : `${Math.round((blockDone / blockTotal) * 100)}% of the block is complete. ${blockHistory.filter((entry) => entry.videosAttached > 0).length} logged day${blockHistory.filter((entry) => entry.videosAttached > 0).length === 1 ? "" : "s"} included video.`;
+
+    programCurrentMarker.textContent = isBlockComplete() ? "Block complete" : `${week.label} / ${day.label}`;
+    programCurrentCopy.textContent = isBlockComplete()
+        ? "All planned training days are complete. Use the recap and handoff questions to build the next block."
+        : `${day.title} is the published workout and should stay highlighted in the sheet until you save it.`;
+
+    programWeeklyRecapTitle.textContent = weekHistory.length === weekTotal ? `${week.label} recap ready` : `${week.label} still in progress`;
+    programWeeklyRecapCopy.textContent = weekHistory.length === 0
+        ? "Daily reviews will roll up here once sessions are logged."
+        : `Completed ${weekHistory.length}/${weekTotal} days. Average session quality ${averageFromHistory(weekHistory, "sessionQualityScore").toFixed(1)}/3.`;
+
+    programBlockRecapTitle.textContent = blockDone === blockTotal ? "Block recap ready" : "Block still in progress";
+    programBlockRecapCopy.textContent = blockHistory.length === 0
+        ? "Block recap will summarize compliance, fatigue, and session quality as training logs come in."
+        : `Logged ${blockHistory.length} day${blockHistory.length === 1 ? "" : "s"}. Last saved session: ${lastLog.weekLabel} ${lastLog.dayLabel}.`;
+}
+
 function renderProgramWeek() {
     const selectedWeek = blockWeeks[currentProgramWeek];
     currentWeekBadge.textContent = `${selectedWeek.label} of 4`;
@@ -487,18 +918,20 @@ function renderProgramWeek() {
     selectedWeekDescription.textContent = selectedWeek.description;
 
     blockWeekGrid.innerHTML = blockWeeks
-        .map(
-            (week, index) => `
+        .map((week, index) => {
+            const doneCount = countCompletedDaysForWeek(index);
+            const weekStatus = index < trainingState.currentWeekIndex ? "Done" : index === trainingState.currentWeekIndex ? "Current" : "Upcoming";
+            return `
                 <button class="exercise-selector-button ${index === currentProgramWeek ? "is-selected" : ""}" type="button" data-week-index="${index}">
                     <strong>${week.label}</strong>
                     <span>${week.title}</span>
                     <div class="exercise-meta">
-                        <span>${week.days.length} planned days</span>
-                        <span>${index === currentProgramWeek ? "Selected" : "Open"}</span>
+                        <span>${doneCount}/${week.days.length} done</span>
+                        <span>${index === currentProgramWeek ? "Selected" : weekStatus}</span>
                     </div>
                 </button>
-            `
-        )
+            `;
+        })
         .join("");
 
     const maxSlots = Math.max(...selectedWeek.days.map((day) => day.exercises.length));
@@ -507,33 +940,36 @@ function renderProgramWeek() {
         <tr>
             <th class="program-sheet-slot">Slot</th>
             ${selectedWeek.days
-                .map(
-                    (day) => `
+                .map((day, dayIndex) => {
+                    const status = getDayStatus(currentProgramWeek, dayIndex);
+                    const statusLabel = status === "done" ? "Done" : status === "current" ? "Live" : status === "passed" ? "Passed" : "Upcoming";
+                    return `
                         <th>
-                            <div class="program-sheet-day">
+                            <div class="program-sheet-day ${status}">
                                 <strong>${day.label}</strong>
                                 <span>${day.title}</span>
+                                <small class="program-day-status ${status}">${statusLabel}</small>
                             </div>
                         </th>
-                    `
-                )
+                    `;
+                })
                 .join("")}
         </tr>
     `;
 
     programSheetBody.innerHTML = Array.from({ length: maxSlots }, (_, slotIndex) => {
-        const rowNumber = slotIndex + 1;
         const cells = selectedWeek.days
-            .map((day) => {
+            .map((day, dayIndex) => {
                 const exercise = day.exercises[slotIndex];
+                const status = getDayStatus(currentProgramWeek, dayIndex);
 
                 if (!exercise) {
                     return `<td><div class="program-sheet-cell program-sheet-empty">Open slot</div></td>`;
                 }
 
                 return `
-                    <td>
-                        <div class="program-sheet-cell">
+                    <td class="program-day-cell ${status}">
+                        <div class="program-sheet-cell ${status}">
                             <div class="program-sheet-exercise">
                                 <strong>${exercise.name}</strong>
                                 <span>${exercise.prescription}</span>
@@ -546,7 +982,7 @@ function renderProgramWeek() {
 
         return `
             <tr>
-                <th class="program-sheet-slot">Exercise ${rowNumber}</th>
+                <th class="program-sheet-slot">Exercise ${slotIndex + 1}</th>
                 ${cells}
             </tr>
         `;
@@ -555,25 +991,51 @@ function renderProgramWeek() {
     prevWeekButton.disabled = currentProgramWeek === 0;
     nextWeekButton.disabled = currentProgramWeek === blockWeeks.length - 1;
 
-    const unlocked = currentProgramWeek === blockWeeks.length - 1;
+    const lastWeekIndex = blockWeeks.length - 1;
+    const unlocked = currentProgramWeek === lastWeekIndex && countCompletedDaysForWeek(lastWeekIndex) === blockWeeks[lastWeekIndex].days.length;
     newBlockStatus.textContent = unlocked ? "Ready to create" : "Available after week 4";
     newBlockGate.textContent = unlocked
-        ? "Week 4 is selected. The next block can now pull forward the previous block's results and ask a few handoff questions before generating the next one."
-        : "Complete week 4 first. Then this section should unlock, pull in data from the previous block, ask a few basic questions, and build the next block.";
+        ? "Week 4 is complete. The next block can now use the previous block recap, ask a few handoff questions, and generate the next cycle."
+        : "Complete all of week 4 first. Then this section should unlock, pull in the recap from the previous block, ask a few basic questions, and build the next one.";
     newBlockForm.classList.toggle("is-disabled", !unlocked);
     createBlockButton.disabled = !unlocked;
+
+    renderProgressSummaries();
 }
 
 function renderWorkoutPlanner() {
+    const currentDay = getCurrentDayDefinition();
     const exercise = workoutPlan[selectedExerciseIndex];
+
+    if (!exercise) {
+        exerciseSelectorList.innerHTML = `
+            <button class="exercise-selector-button is-selected" type="button">
+                <strong>Block complete</strong>
+                <div class="exercise-meta">
+                    <span>No active workout</span>
+                    <span>Review recap</span>
+                </div>
+            </button>
+        `;
+        selectedExerciseTitle.textContent = "No workout published";
+        selectedExercisePlan.textContent = "Finish the recap and create the next block to publish another day here.";
+        selectedExerciseProgress.textContent = "0 active sets";
+        selectedSetList.innerHTML = "";
+        dailyStatus.textContent = "Block complete";
+        return;
+    }
+
+    const exerciseDoneCount = workoutPlan.filter((plannedExercise) => plannedExercise.sets.every((set) => set.done)).length;
     const doneCount = exercise.sets.filter((set) => set.done).length;
+    const allDone = workoutPlan.every((plannedExercise) => plannedExercise.sets.every((set) => set.done));
+    dailyStatus.textContent = allDone ? "Ready to save day" : `Logging ${currentDay.day.label}`;
 
     exerciseSelectorList.innerHTML = `
         <button class="exercise-selector-button is-selected" type="button">
             <strong>${exercise.name}</strong>
             <div class="exercise-meta">
-                <span>${exercise.sets.length} sets planned</span>
-                <span>${doneCount}/${exercise.sets.length} done</span>
+                <span>${currentDay.week.label} / ${currentDay.day.label}</span>
+                <span>${exerciseDoneCount}/${workoutPlan.length} exercises fully done</span>
             </div>
         </button>
     `;
@@ -581,16 +1043,6 @@ function renderWorkoutPlanner() {
     exerciseSliderPrev.disabled = selectedExerciseIndex === 0;
     exerciseSliderNext.disabled = selectedExerciseIndex === workoutPlan.length - 1;
 
-    renderSelectedExercise();
-}
-
-function renderSelectedExercise() {
-    const exercise = workoutPlan[selectedExerciseIndex];
-    if (!exercise) {
-        return;
-    }
-
-    const doneCount = exercise.sets.filter((set) => set.done).length;
     selectedExerciseTitle.textContent = exercise.name;
     selectedExercisePlan.textContent = `${exercise.summary} ${exercise.sets.length} planned sets.`;
     selectedExerciseProgress.textContent = `${doneCount} of ${exercise.sets.length} sets done`;
@@ -638,6 +1090,17 @@ function renderProfile() {
     renderWeightUnit();
 }
 
+function refreshWorkspaceState() {
+    loadWorkoutPlanForCurrentDay();
+    currentProgramWeek = trainingState.currentWeekIndex;
+    renderProfile();
+    renderWorkoutPlanner();
+    renderProgramWeek();
+    renderWorkoutFeedback();
+    renderChatSuggestions();
+    savePrototypeState();
+}
+
 viewButtons.forEach((button) => {
     button.addEventListener("click", () => {
         const target = button.dataset.viewTarget;
@@ -671,6 +1134,7 @@ authForm.addEventListener("submit", (event) => {
 
     openWorkspace(displayName || "Athlete");
     setActivePanel(authMode === "create" ? "profile-panel" : "today-panel");
+    savePrototypeState();
 });
 
 navButtons.forEach((button) => {
@@ -687,12 +1151,14 @@ blockWeekGrid.addEventListener("click", (event) => {
 
     currentProgramWeek = Number(button.dataset.weekIndex);
     renderProgramWeek();
+    savePrototypeState();
 });
 
 prevWeekButton.addEventListener("click", () => {
     if (currentProgramWeek > 0) {
         currentProgramWeek -= 1;
         renderProgramWeek();
+        savePrototypeState();
     }
 });
 
@@ -700,6 +1166,7 @@ nextWeekButton.addEventListener("click", () => {
     if (currentProgramWeek < blockWeeks.length - 1) {
         currentProgramWeek += 1;
         renderProgramWeek();
+        savePrototypeState();
     }
 });
 
@@ -709,7 +1176,7 @@ createBlockButton.addEventListener("click", () => {
     }
 
     newBlockStatus.textContent = "Next block drafted";
-    newBlockGate.textContent = "The next block would now use the previous block data plus your recovery and priority answers to build a new cycle.";
+    newBlockGate.textContent = "The next block would now use the previous block recap, your recovery answers, and your next priority to build a new cycle.";
 });
 
 weightUnitToggle.addEventListener("click", (event) => {
@@ -721,6 +1188,8 @@ weightUnitToggle.addEventListener("click", (event) => {
     weightUnit = button.dataset.weightUnit;
     renderProfile();
     renderWorkoutPlanner();
+    renderProgramWeek();
+    savePrototypeState();
 });
 
 exerciseSliderPrev.addEventListener("click", () => {
@@ -750,24 +1219,21 @@ selectedSetList.addEventListener("change", (event) => {
     if (target.dataset.field === "done") {
         exercise.sets[setIndex].done = target.checked;
     }
-
     if (target.dataset.field === "reps") {
         exercise.sets[setIndex].completedReps = Number(target.value);
     }
-
     if (target.dataset.field === "weight") {
         exercise.sets[setIndex].completedWeight = convertWeightFromDisplay(target.value);
     }
-
     if (target.dataset.field === "rpe") {
         exercise.sets[setIndex].completedRpe = Number(target.value);
     }
-
     if (target.dataset.field === "video") {
         exercise.sets[setIndex].videoName = target.files.length > 0 ? target.files[0].name : "";
     }
 
     renderWorkoutPlanner();
+    savePrototypeState();
 });
 
 profileForm.addEventListener("submit", (event) => {
@@ -792,18 +1258,26 @@ profileForm.addEventListener("submit", (event) => {
 
     renderProfile();
     profileStatus.textContent = "Profile saved locally";
+    savePrototypeState();
 });
 
 dailyCheckinForm.addEventListener("submit", (event) => {
     event.preventDefault();
+
+    if (!workoutPlan.length) {
+        return;
+    }
 
     const sessionQuality = document.getElementById("session-quality").value;
     const fatigueLevel = document.getElementById("fatigue-level").value;
     const notes = document.getElementById("daily-notes").value.trim();
     const exercises = getWorkoutEntries();
     const setVideos = exercises.flatMap((exercise) =>
-        exercise.sets.filter((set) => set.videoName).map((set) => `${exercise.name} set ${set.setNumber}: ${set.videoName}`)
+        exercise.sets.filter((set) => set.video_name).map((set) => `${exercise.exercise_name} set ${set.set_number}: ${set.video_name}`)
     );
+    const currentDay = getCurrentDayDefinition();
+    const completionSummary = buildDayCompletionSummary(workoutPlan);
+    const completionPercent = completionSummary.totalSets === 0 ? 0 : Math.round((completionSummary.doneSets / completionSummary.totalSets) * 100);
 
     let summary = "";
     let status = "";
@@ -812,36 +1286,36 @@ dailyCheckinForm.addEventListener("submit", (event) => {
 
     if (sessionQuality === "great" && fatigueLevel !== "high") {
         status = "Progression supported";
-        summary = "Today's session was productive. The main lifts looked ready to keep moving, and the workout review supports continued progression.";
+        summary = "Today's session was productive. The plan and the logged work are still aligned well enough to keep progressing.";
         cues = [
-            "Keep competition bench positions consistent as load rises.",
-            "Let accessories support the goal instead of turning into random fatigue."
+            "Keep the same setup quality as load rises.",
+            "Let the next session build from this one instead of making random jumps."
         ];
         improvements = [
-            "Keep logging exact reps, sets, and load so next-week adjustments stay precise.",
-            "Use the video review to confirm that faster work is still technically clean."
+            "Use the weekly recap to confirm that good days are repeating, not just appearing once.",
+            "Keep attaching set videos when a rep slows down or feels different."
         ];
     } else if (fatigueLevel === "high" || sessionQuality === "rough") {
         status = "Watch fatigue closely";
-        summary = "Today's workout suggests recovery is getting tighter. The next useful move is protecting the following sessions instead of forcing more stress into the block.";
+        summary = "Today's workout suggests recovery is tighter. The next useful move is to protect the rest of the week, not force more stress into it.";
         cues = [
-            "Stay patient in the setup instead of rushing reps when tired.",
-            "Protect bar path and position before chasing heavier load."
+            "Keep positions patient when fatigue starts pulling the rep apart.",
+            "Prioritize repeatable execution before chasing extra load."
         ];
         improvements = [
-            "Cut the least useful fatigue first, especially if accessories are drifting sloppy.",
-            "Use video to see whether the miss was technical or simply fatigue-related."
+            "Let the weekly recap decide whether fatigue is a pattern or just one hard day.",
+            "Use block recap trends before making a full rewrite of the next cycle."
         ];
     } else {
         status = "Readiness stable";
-        summary = "Today's workout was solid overall. The block can likely stay on course while the coach watches for repeated fatigue or underperformance patterns.";
+        summary = "Today's workout was solid overall. The current block can stay on course while the recap watches for repeated changes in execution or fatigue.";
         cues = [
-            "Keep execution repeatable across all work sets.",
-            "Use the planned workout as the baseline before making emotional load jumps."
+            "Keep day-to-day execution repeatable.",
+            "Use the planned workout as the baseline before adjusting."
         ];
         improvements = [
-            "Look for small technique wins, not a full rewrite of the workout.",
-            "Track where reps slow down so the next cue is more specific."
+            "Look for small technique wins that carry into the weekly recap.",
+            "Track where reps slow down so the next cue can be more specific."
         ];
     }
 
@@ -850,23 +1324,60 @@ dailyCheckinForm.addEventListener("submit", (event) => {
     }
 
     const videoText = setVideos.length > 0
-        ? `Set videos attached: ${setVideos.join(" | ")}. Use them to compare different sets, not just the whole exercise.`
-        : "No set videos attached today. Add one on any set when you want feedback on the exact rep quality or load change.";
+        ? `Set videos attached: ${setVideos.join(" | ")}. Those should feed into daily, weekly, and block recap notes without cluttering the main table.`
+        : "No set videos attached today. Add one when you want a specific set reviewed more closely.";
 
+    trainingState.completedDays[currentDay.dayKey] = {
+        weekIndex: currentDay.weekIndex,
+        dayIndex: currentDay.dayIndex,
+        weekLabel: currentDay.week.label,
+        dayLabel: currentDay.day.label,
+        dayTitle: currentDay.day.title,
+        completionPercent,
+        sessionQuality,
+        fatigueLevel,
+        notes,
+        videosAttached: completionSummary.attachedVideos,
+        exercises: JSON.parse(JSON.stringify(workoutPlan))
+    };
+
+    trainingState.workoutHistory = trainingState.workoutHistory.filter((entry) => entry.dayKey !== currentDay.dayKey);
+    trainingState.workoutHistory.push({
+        dayKey: currentDay.dayKey,
+        weekIndex: currentDay.weekIndex,
+        dayIndex: currentDay.dayIndex,
+        weekLabel: currentDay.week.label,
+        dayLabel: currentDay.day.label,
+        completionPercent,
+        sessionQualityScore: qualityToScore(sessionQuality),
+        fatigueScore: fatigueToScore(fatigueLevel),
+        videosAttached: completionSummary.attachedVideos
+    });
+
+    lastWorkoutReview = { summary, cues, improvements, videoText };
     dailyStatus.textContent = status;
     updateWorkoutFeedbackPanel(summary, cues, improvements, videoText);
+
+    advanceTrainingPointer();
+    document.getElementById("daily-notes").value = "";
+    refreshWorkspaceState();
 });
 
 chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    submitChatMessage(chatInput.value);
+    chatInput.value = "";
+});
 
-    const message = chatInput.value.trim();
-    if (!message) {
+chatSuggestions.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-chat-question]");
+    if (!button) {
         return;
     }
 
-    appendChatMessage("user", message);
-    appendChatMessage("coach", getCoachReply(message));
+    const question = button.dataset.chatQuestion ?? "";
+    chatInput.value = question;
+    submitChatMessage(question);
     chatInput.value = "";
 });
 
@@ -874,8 +1385,11 @@ signOutButton.addEventListener("click", () => {
     showView("landing-view");
 });
 
+loadPrototypeState();
 setAuthMode("create");
 renderProfile();
 renderWorkoutPlanner();
 renderProgramWeek();
+renderWorkoutFeedback();
+renderChatSuggestions();
 setActivePanel("profile-panel");

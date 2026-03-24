@@ -168,3 +168,43 @@ class DeadliftVideoAnalysisResponse(BaseModel):
     programming_adjustments: list[str]
     overlay_plan: dict
     reference_notes: list[str]
+
+
+class BenchVideoPathAnalysisRequest(BaseModel):
+    account_id: str
+    video_path: str = Field(min_length=3, max_length=500)
+    video_name: str = Field(min_length=3, max_length=200)
+    camera_angle: str = Field(pattern="^(side|front|front_45)$")
+    lift_kg: float = Field(gt=0.0, le=1000.0)
+    reps: int = Field(ge=1, le=20)
+    completed_rpe: float = Field(ge=5.0, le=10.0)
+    grip_width_style: str = Field(pattern="^(narrow|medium|wide|self_selected)$")
+
+
+class SquatVideoPathAnalysisRequest(BaseModel):
+    account_id: str
+    video_path: str = Field(min_length=3, max_length=500)
+    video_name: str = Field(min_length=3, max_length=200)
+    camera_angle: str = Field(pattern="^(side|front|front_45|rear_45)$")
+    lift_kg: float = Field(gt=0.0, le=1000.0)
+    reps: int = Field(ge=1, le=20)
+    completed_rpe: float = Field(ge=5.0, le=10.0)
+    stance_style: str = Field(pattern="^(narrow|medium|wide|self_selected)$")
+
+
+class DeadliftVideoPathAnalysisRequest(BaseModel):
+    account_id: str
+    video_path: str = Field(min_length=3, max_length=500)
+    video_name: str = Field(min_length=3, max_length=200)
+    camera_angle: str = Field(pattern="^(side|front_45|rear_45)$")
+    lift_kg: float = Field(gt=0.0, le=1000.0)
+    reps: int = Field(ge=1, le=20)
+    completed_rpe: float = Field(ge=5.0, le=10.0)
+    deadlift_style: str = Field(pattern="^(conventional|sumo)$")
+
+
+class VideoPathAnalysisResponse(BaseModel):
+    analysis: dict
+    derived_signals: dict
+    landmark_frames: list[dict]
+    sampled_frame_count: int

@@ -11,6 +11,7 @@ class AthleteProfilePayload(BaseModel):
     training_days_per_week: int = Field(ge=4, le=5)
     primary_goal: str = Field(min_length=4, max_length=140)
     equipment: str = Field(min_length=2, max_length=40)
+    preferred_block_type: str = Field(default="", max_length=40)
     squat_kg: float = Field(gt=20, lt=600)
     bench_kg: float = Field(gt=20, lt=400)
     deadlift_kg: float = Field(gt=20, lt=600)

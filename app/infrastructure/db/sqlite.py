@@ -37,6 +37,7 @@ class SQLiteDatabase:
                     training_days_per_week INTEGER NOT NULL,
                     primary_goal TEXT NOT NULL,
                     equipment TEXT NOT NULL DEFAULT 'Raw',
+                    preferred_block_type TEXT NOT NULL DEFAULT '',
                     squat_kg REAL NOT NULL,
                     bench_kg REAL NOT NULL,
                     deadlift_kg REAL NOT NULL,
@@ -49,6 +50,7 @@ class SQLiteDatabase:
             self._ensure_column(connection, "athlete_profiles", "height_cm", "REAL NOT NULL DEFAULT 170")
             self._ensure_column(connection, "athlete_profiles", "sex", "TEXT NOT NULL DEFAULT ''")
             self._ensure_column(connection, "athlete_profiles", "equipment", "TEXT NOT NULL DEFAULT 'Raw'")
+            self._ensure_column(connection, "athlete_profiles", "preferred_block_type", "TEXT NOT NULL DEFAULT ''")
             self._ensure_column(connection, "athlete_profiles", "notes", "TEXT NOT NULL DEFAULT ''")
 
     @staticmethod

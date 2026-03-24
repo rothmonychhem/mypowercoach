@@ -36,6 +36,7 @@ class AthleteOnboardingService:
         squat_kg: float,
         bench_kg: float,
         deadlift_kg: float,
+        preferred_block_type: str = "",
         notes: str = "",
         constraints: list[str] | None = None,
     ) -> tuple[AthleteProfile, ProgramOverview]:
@@ -56,6 +57,7 @@ class AthleteOnboardingService:
             training_days_per_week=training_days_per_week,
             primary_goal=primary_goal.strip(),
             equipment=equipment.strip(),
+            preferred_block_type=preferred_block_type.strip(),
             lift_numbers=LiftNumbers(
                 squat_kg=squat_kg,
                 bench_kg=bench_kg,

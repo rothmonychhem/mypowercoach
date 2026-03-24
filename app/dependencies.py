@@ -13,6 +13,7 @@ from app.domain.services.program_generator import ProgramGenerator
 from app.domain.services.squat_video_analyzer import SquatVideoAnalyzer
 from app.infrastructure.db.sqlite import SQLiteDatabase
 from app.infrastructure.repositories.sqlite import SQLiteAccountRepository, SQLiteAthleteRepository
+from app.infrastructure.video.pipeline import MediaPipeVideoAnalysisPipeline
 
 
 @lru_cache
@@ -59,4 +60,5 @@ def get_coaching_service() -> CoachingService:
         bench_video_analyzer=BenchVideoAnalyzer(),
         squat_video_analyzer=SquatVideoAnalyzer(),
         deadlift_video_analyzer=DeadliftVideoAnalyzer(),
+        video_analysis_pipeline=MediaPipeVideoAnalysisPipeline(),
     )
